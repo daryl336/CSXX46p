@@ -1,0 +1,75 @@
+2025-09-27 16:04:52,090 [scully_wrapper] DEBUG: Calling setup on callback.
+2025-09-27 16:04:52,090 [scully_code] INFO: Loading model from saved state.
+2025-09-27 16:04:52,091 [scully_wrapper] DEBUG: Got result from callback#setup in 0.001s.
+2025-09-27 16:04:52,197 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:52,198 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:52,198 [scully_wrapper] DEBUG: Got result from callback#act in 0.001s.
+2025-09-27 16:04:52,302 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:52,302 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:52,303 [scully_wrapper] DEBUG: Got result from callback#act in 0.000s.
+2025-09-27 16:04:52,407 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:52,407 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:52,408 [scully_wrapper] DEBUG: Got result from callback#act in 0.000s.
+2025-09-27 16:04:52,513 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:52,514 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:52,515 [scully_wrapper] DEBUG: Got result from callback#act in 0.001s.
+2025-09-27 16:04:52,627 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:52,627 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:52,627 [scully_wrapper] DEBUG: Got result from callback#act in 0.000s.
+2025-09-27 16:04:52,727 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:52,727 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:52,728 [scully_wrapper] DEBUG: Got result from callback#act in 0.001s.
+2025-09-27 16:04:52,832 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:52,832 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:52,833 [scully_wrapper] DEBUG: Got result from callback#act in 0.001s.
+2025-09-27 16:04:52,935 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:52,936 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:52,936 [scully_wrapper] DEBUG: Got result from callback#act in 0.001s.
+2025-09-27 16:04:53,040 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:53,041 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:53,041 [scully_wrapper] DEBUG: Got result from callback#act in 0.001s.
+2025-09-27 16:04:53,142 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:53,143 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:53,144 [scully_wrapper] DEBUG: Got result from callback#act in 0.001s.
+2025-09-27 16:04:53,247 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:53,247 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:53,248 [scully_wrapper] DEBUG: Got result from callback#act in 0.001s.
+2025-09-27 16:04:53,348 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:53,348 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:53,350 [scully_wrapper] DEBUG: Got result from callback#act in 0.001s.
+2025-09-27 16:04:53,453 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:53,453 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:53,454 [scully_wrapper] DEBUG: Got result from callback#act in 0.001s.
+2025-09-27 16:04:53,554 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:53,554 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:53,555 [scully_wrapper] DEBUG: Got result from callback#act in 0.001s.
+2025-09-27 16:04:53,660 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:53,660 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:53,661 [scully_wrapper] DEBUG: Got result from callback#act in 0.001s.
+2025-09-27 16:04:53,765 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:53,765 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:53,775 [scully_wrapper] DEBUG: Got result from callback#act in 0.010s.
+2025-09-27 16:04:53,870 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:53,870 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:53,872 [scully_wrapper] DEBUG: Got result from callback#act in 0.001s.
+2025-09-27 16:04:53,975 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:53,975 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:53,976 [scully_wrapper] DEBUG: Got result from callback#act in 0.001s.
+2025-09-27 16:04:54,085 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:54,085 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:54,086 [scully_wrapper] DEBUG: Got result from callback#act in 0.001s.
+2025-09-27 16:04:54,190 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:54,190 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:54,191 [scully_wrapper] DEBUG: Got result from callback#act in 0.001s.
+2025-09-27 16:04:54,293 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:54,293 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:54,294 [scully_wrapper] DEBUG: Got result from callback#act in 0.001s.
+2025-09-27 16:04:54,397 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:54,397 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:54,397 [scully_wrapper] DEBUG: Got result from callback#act in 0.001s.
+2025-09-27 16:04:54,502 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:54,502 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:54,502 [scully_wrapper] DEBUG: Got result from callback#act in 0.001s.
+2025-09-27 16:04:54,696 [scully_wrapper] DEBUG: Calling act on callback.
+2025-09-27 16:04:54,697 [scully_code] DEBUG: Querying model for action.
+2025-09-27 16:04:54,697 [scully_wrapper] DEBUG: Got result from callback#act in 0.000s.

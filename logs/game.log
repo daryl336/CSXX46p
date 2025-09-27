@@ -1,0 +1,76 @@
+2025-09-27 16:04:51,561 [BombeRLeWorld] INFO: Initializing game world
+2025-09-27 16:04:52,091 [BombeRLeWorld] INFO: STARTING ROUND #1
+2025-09-27 16:04:52,197 [BombeRLeWorld] INFO: STARTING STEP 1
+2025-09-27 16:04:52,198 [BombeRLeWorld] INFO: Agent <scully> chose action DOWN in 0.00s.
+2025-09-27 16:04:52,198 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:52,302 [BombeRLeWorld] INFO: STARTING STEP 2
+2025-09-27 16:04:52,303 [BombeRLeWorld] INFO: Agent <scully> chose action RIGHT in 0.00s.
+2025-09-27 16:04:52,303 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:52,407 [BombeRLeWorld] INFO: STARTING STEP 3
+2025-09-27 16:04:52,408 [BombeRLeWorld] INFO: Agent <scully> chose action UP in 0.00s.
+2025-09-27 16:04:52,408 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:52,512 [BombeRLeWorld] INFO: STARTING STEP 4
+2025-09-27 16:04:52,515 [BombeRLeWorld] INFO: Agent <scully> chose action UP in 0.00s.
+2025-09-27 16:04:52,515 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:52,623 [BombeRLeWorld] INFO: STARTING STEP 5
+2025-09-27 16:04:52,628 [BombeRLeWorld] INFO: Agent <scully> chose action UP in 0.00s.
+2025-09-27 16:04:52,628 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:52,727 [BombeRLeWorld] INFO: STARTING STEP 6
+2025-09-27 16:04:52,728 [BombeRLeWorld] INFO: Agent <scully> chose action DOWN in 0.00s.
+2025-09-27 16:04:52,728 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:52,832 [BombeRLeWorld] INFO: STARTING STEP 7
+2025-09-27 16:04:52,833 [BombeRLeWorld] INFO: Agent <scully> chose action DOWN in 0.00s.
+2025-09-27 16:04:52,833 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:52,935 [BombeRLeWorld] INFO: STARTING STEP 8
+2025-09-27 16:04:52,936 [BombeRLeWorld] INFO: Agent <scully> chose action RIGHT in 0.00s.
+2025-09-27 16:04:52,936 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:53,040 [BombeRLeWorld] INFO: STARTING STEP 9
+2025-09-27 16:04:53,041 [BombeRLeWorld] INFO: Agent <scully> chose action UP in 0.00s.
+2025-09-27 16:04:53,041 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:53,142 [BombeRLeWorld] INFO: STARTING STEP 10
+2025-09-27 16:04:53,144 [BombeRLeWorld] INFO: Agent <scully> chose action DOWN in 0.00s.
+2025-09-27 16:04:53,144 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:53,247 [BombeRLeWorld] INFO: STARTING STEP 11
+2025-09-27 16:04:53,248 [BombeRLeWorld] INFO: Agent <scully> chose action WAIT in 0.00s.
+2025-09-27 16:04:53,248 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:53,347 [BombeRLeWorld] INFO: STARTING STEP 12
+2025-09-27 16:04:53,350 [BombeRLeWorld] INFO: Agent <scully> chose action RIGHT in 0.00s.
+2025-09-27 16:04:53,350 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:53,452 [BombeRLeWorld] INFO: STARTING STEP 13
+2025-09-27 16:04:53,454 [BombeRLeWorld] INFO: Agent <scully> chose action UP in 0.00s.
+2025-09-27 16:04:53,454 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:53,554 [BombeRLeWorld] INFO: STARTING STEP 14
+2025-09-27 16:04:53,555 [BombeRLeWorld] INFO: Agent <scully> chose action DOWN in 0.00s.
+2025-09-27 16:04:53,555 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:53,659 [BombeRLeWorld] INFO: STARTING STEP 15
+2025-09-27 16:04:53,662 [BombeRLeWorld] INFO: Agent <scully> chose action WAIT in 0.00s.
+2025-09-27 16:04:53,662 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:53,764 [BombeRLeWorld] INFO: STARTING STEP 16
+2025-09-27 16:04:53,775 [BombeRLeWorld] INFO: Agent <scully> chose action DOWN in 0.01s.
+2025-09-27 16:04:53,775 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:53,869 [BombeRLeWorld] INFO: STARTING STEP 17
+2025-09-27 16:04:53,872 [BombeRLeWorld] INFO: Agent <scully> chose action DOWN in 0.00s.
+2025-09-27 16:04:53,872 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:53,974 [BombeRLeWorld] INFO: STARTING STEP 18
+2025-09-27 16:04:53,976 [BombeRLeWorld] INFO: Agent <scully> chose action LEFT in 0.00s.
+2025-09-27 16:04:53,976 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:54,084 [BombeRLeWorld] INFO: STARTING STEP 19
+2025-09-27 16:04:54,086 [BombeRLeWorld] INFO: Agent <scully> chose action RIGHT in 0.00s.
+2025-09-27 16:04:54,086 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:54,189 [BombeRLeWorld] INFO: STARTING STEP 20
+2025-09-27 16:04:54,192 [BombeRLeWorld] INFO: Agent <scully> chose action DOWN in 0.00s.
+2025-09-27 16:04:54,192 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:54,292 [BombeRLeWorld] INFO: STARTING STEP 21
+2025-09-27 16:04:54,295 [BombeRLeWorld] INFO: Agent <scully> chose action DOWN in 0.00s.
+2025-09-27 16:04:54,295 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:54,396 [BombeRLeWorld] INFO: STARTING STEP 22
+2025-09-27 16:04:54,397 [BombeRLeWorld] INFO: Agent <scully> chose action UP in 0.00s.
+2025-09-27 16:04:54,397 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:54,501 [BombeRLeWorld] INFO: STARTING STEP 23
+2025-09-27 16:04:54,502 [BombeRLeWorld] INFO: Agent <scully> chose action RIGHT in 0.00s.
+2025-09-27 16:04:54,502 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
+2025-09-27 16:04:54,605 [BombeRLeWorld] INFO: STARTING STEP 24
+2025-09-27 16:04:54,696 [BombeRLeWorld] INFO: WRAPPING UP ROUND #1
+2025-09-27 16:04:54,696 [BombeRLeWorld] INFO: SHUT DOWN
+2025-09-27 16:04:54,697 [BombeRLeWorld] INFO: Agent <scully> chose action UP in 0.00s.
+2025-09-27 16:04:54,697 [BombeRLeWorld] INFO: Agent <scully> stayed within acceptable think time.
