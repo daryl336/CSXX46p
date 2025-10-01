@@ -48,12 +48,16 @@ Train agent:
 
 ```python
 python -m main play --agents scully --train 1 --n-round 2500 --no-gui
-python -m main play --agents dqn_torch --train 1 --n-round 50000 --no-gui
+python -m main play \
+  --agents dqn_torch rule_based_agent rule_based_agent rule_based_agent \
+  --train 1 \
+  --n-round 50000 \
+  --no-gui
 ```
 
 Play agent:
 
 ```python
 python -m main play --agents scully
-python -m main play --agents scully dqn_torch
+python -m main play --agents scully dqn_torch rule_based_agent
 ```

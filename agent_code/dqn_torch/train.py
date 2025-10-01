@@ -34,6 +34,7 @@ def setup_training(self):
     self.epsilon_decay = 0.995
     self.target_update = 50
     self.memory_size = 100_000
+    self.save_path = "models"
     self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     self.memory = deque(maxlen=self.memory_size)
@@ -105,7 +106,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
         self.save_counter = 0
     self.save_counter += 1
     if self.save_counter % 50 == 0:
-        torch.save(self.policy_net.state_dict(), f"dqn_checkpoint_{self.save_counter}.pth")
+        torch.save(self.policy_net.state_dict(), f"{self.save_path}/dqn_checkpoint_{self.save_counter}.pth")
         print(f"💾 Saved model at episode {self.save_counter}")
 
 # -------------------------
