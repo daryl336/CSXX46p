@@ -119,7 +119,7 @@ class AgentState:
     rb: Optional[ReplayBuffer] = None
     device: str = "cpu"
     save_dir: str = "models"
-    save_path: str = "models/dqn_torch.pt"
+    save_path: str = "dqn_checkpoint_2500.pth"
 
 
 # ----- Framework hooks -----
