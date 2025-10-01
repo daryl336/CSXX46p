@@ -1,2 +1,11 @@
 .DS_Store
 __pycache__
+__pycache__/agents.cpython-39.pyc
+__pycache__/agents.cpython-39.pyc
+__pycache__/environment.cpython-39.pyc
+__pycache__/events.cpython-39.pyc
+__pycache__/fallbacks.cpython-39.pyc
+__pycache__/items.cpython-39.pyc
+__pycache__/main.cpython-39.pyc
+__pycache__/replay.cpython-39.pyc
+__pycache__/settings.cpython-39.pyc
