@@ -53,6 +53,12 @@ python -m main play \
   --train 1 \
   --n-round 50000 \
   --no-gui
+
+python -m main play \
+  --agents bbman rule_based_agent rule_based_agent rule_based_agent \
+  --train 1 \
+  --n-round 50000 \
+  --no-gui
 ```
 
 Play agent:
@@ -60,4 +66,6 @@ Play agent:
 ```python
 python -m main play --agents scully
 python -m main play --agents scully dqn_torch rule_based_agent
+python -m main play --agents scully bbman rule_based_agent
+python -m main play --agents rule_based_agent
 ```
