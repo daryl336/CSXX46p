@@ -396,11 +396,11 @@ def blast_cells_from(pos: Tuple[int,int], field: np.ndarray, blast_strength: int
             nx, ny = x0 + dx*step, y0 + dy*step
             if not in_bounds(field, nx, ny):
                 break
-            if field[ny, nx] == -1:
+            if field[nx, ny] == -1:
                 # rigid wall: block and stop
                 break
-            mask[ny, nx] = True
-            if field[ny, nx] == 1:
+            mask[nx, ny] = True
+            if field[nx, ny] == 1:
                 # crate: blast reaches crate but stops beyond it
                 break
     return mask
@@ -416,40 +416,40 @@ def bfs_distance_avoid(field: np.ndarray, start: Tuple[int,int], avoid_mask: Opt
     sx, sy = start
     if not in_bounds(field, sx, sy) or not is_free(field, sx, sy):
         return dist
-    if avoid_mask is not None and avoid_mask[sy, sx]:
+    if avoid_mask is not None and avoid_mask[sx, sy]:
         # starting tile is avoided -> still allow exploring escapes from it (optional)
         # Here we allow start (so agent can move out) but mark it as visited at 0.
         pass
 
     dq = deque()
-    dist[sy, sx] = 0.0
+    dist[sx, sy] = 0.0
     dq.append((sx, sy))
 
     while dq:
         x, y = dq.popleft()
-        d = dist[y, x]
+        d = dist[x, y]
         if max_depth is not None and d >= max_depth:
             continue
         for dx, dy in DELTAS:
             nx, ny = x + dx, y + dy
             if not in_bounds(field, nx, ny):
                 continue
-            if dist[ny, nx] != np.inf:
+            if dist[nx, ny] != np.inf:
                 continue
             # must be walkable
             if not is_free(field, nx, ny):
                 continue
             # avoid hazardous cells (if mask provided)
-            if avoid_mask is not None and avoid_mask[ny, nx]:
+            if avoid_mask is not None and avoid_mask[nx, ny]:
                 continue
-            dist[ny, nx] = d + 1.0
+            dist[nx, ny] = d + 1.0
             dq.append((nx, ny))
     return dist
 
 def should_plant_bomb(game_state: Dict,
-                      field_key: str = "field",
-                      self_key: str = "self",
-                      others_key: str = "others",
+                      field: np.ndarray,
+                      self_info: Tuple,
+                      others: List,
                       blast_strength: int = 3,
                       explosion_timer: int = 3,
                       allow_suicide: bool = False) -> Dict:
@@ -464,13 +464,10 @@ def should_plant_bomb(game_state: Dict,
     Returns dict:
       { "plant": bool, "reason": str, "targets": {...}, "escape_distance": d or None }
     """
-    field = game_state.get(field_key)
-    me = game_state.get(self_key)
-    others = game_state.get(others_key, [])
-    if field is None or me is None:
+    if field is None or self_info is None:
         return {"plant": False, "reason": "missing field or self position", "targets": None, "escape_distance": None}
 
-    sx, sy = me
+    sx, sy = get_self_pos(self_info)
     # 1) compute blast footprint if we plant now
     blast_mask = blast_cells_from((sx, sy), field, blast_strength)
 
@@ -479,13 +476,13 @@ def should_plant_bomb(game_state: Dict,
     crates_hit = []
     h, w = field.shape
     for ox, oy in others:
-        if in_bounds(field, ox, oy) and blast_mask[oy, ox]:
+        if in_bounds(field, ox, oy) and blast_mask[ox, oy]:
             opponents_hit.append((ox, oy))
 
     # crates
     ys, xs = np.where(blast_mask)
-    for y, x in zip(ys, xs):
-        if field[y, x] == 1:
+    for x, y in zip(xs, ys):
+        if field[x, y] == 1:
             crates_hit.append((x, y))
 
     # 3) compute escape distances avoiding blast mask cells (we need to reach a safe cell before explosion)
@@ -496,7 +493,7 @@ def should_plant_bomb(game_state: Dict,
     dist = bfs_distance_avoid(field, (sx, sy), avoid_mask=avoid_mask, max_depth=explosion_timer)
     # Find any cell with dist <= explosion_timer and not in blast_mask (safe landing cell)
     safe_cells = np.where((dist <= explosion_timer) & (~avoid_mask))
-    safe_positions = list(zip(safe_cells[1].tolist(), safe_cells[0].tolist()))  # (x,y)
+    safe_positions = list(zip(safe_cells[0].tolist(), safe_cells[1].tolist()))  # (x,y)
     safe_distance = None
     if safe_positions:
         # minimal distance to a safe cell

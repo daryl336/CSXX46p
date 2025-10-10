@@ -17,7 +17,6 @@ bombs = game_state.get('bombs', [])
 explosions = game_state.get('explosion_map', np.zeros((17, 17)))
 lead_margin=1
 
-
 from agent_code.llm.helper import \
     coin_collection_policy, \
     choose_coin_opponent_aware, \
@@ -26,7 +25,9 @@ from agent_code.llm.helper import \
     bfs_distance, \
     get_others_positions, \
     in_bounds, \
-    bfs_shortest_path
+    bfs_shortest_path, \
+    should_plant_bomb, \
+    check_bomb_radius
 
 coin_collection_policy(field, self_info, coins, explosions, others, lead_margin) 
 choice = choose_coin_opponent_aware(field, self_info, coins, explosions, others, lead_margin)
@@ -55,3 +56,8 @@ if candidates:
     candidates.sort(key=lambda t: (t[1], -(t[2]-t[1])))
     best = candidates[0]
     print(best[0], best[3])
+
+should_plant_bomb(game_state,field,self_info,others)
+
+check_bomb_radius(field, self_info, bombs, explosions)
+
