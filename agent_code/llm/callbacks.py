@@ -3,7 +3,7 @@ import numpy as np
 import pickle
 import requests
 import json
-from .helper import check_valid_movement, check_bomb_radius_and_escape, should_plant_bomb, coin_collection_policy, get_self_pos
+from .helper import check_valid_movement, check_bomb_radius_and_escape, should_plant_bomb, coin_collection_policy, get_self_pos, nearest_crate_action
 
 BOMBERMAN_AGENT_ENDPOINT = "http://0.0.0.0:6000"
 
@@ -13,6 +13,8 @@ def setup(self):
     self.bomb_history = deque([], 5)
 
 def act(self, game_state):
+    with open("game_state.pkl", 'wb') as f:
+        pickle.dump(game_state, f)
     round = game_state.get('round')
     step = game_state.get('step')
     field = game_state.get('field', np.zeros((17, 17)))
@@ -24,6 +26,7 @@ def act(self, game_state):
     lead_margin=1
     print(f"Round : {round}, Step : {step}")
     valid_movement = check_valid_movement(field, self_info, bombs)
+    nearest_crate = nearest_crate_action(field, self_info, explosions)
     bomb_radius_data = check_bomb_radius_and_escape(field, self_info, bombs, explosions)
     plant_bomb_full_data = should_plant_bomb(game_state, field, self_info, bombs, others)
     coins_collection_data = coin_collection_policy(field, self_info, coins, explosions, others, lead_margin) 
@@ -34,6 +37,7 @@ def act(self, game_state):
         }
     payload = {
         "valid_movement": json.dumps(valid_movement),
+        "nearest_crate": json.dumps(nearest_crate),
         "check_bomb_radius": json.dumps(bomb_radius_data),
         "plant_bomb_available": json.dumps(plant_bomb_data),
         "coins_collection_policy": json.dumps(coins_collection_data),

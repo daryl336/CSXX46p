@@ -267,6 +267,7 @@ def is_free(field: np.ndarray, x: int, y: int) -> bool:
     # Free cell = 0; walls/crates are non-zero
     return in_bounds(field, x, y) and field[x, y] == 0
 
+
 def neighbors4(field: np.ndarray, x: int, y: int) -> List[Tuple[int,int]]:
     out = []
     for dx, dy in [(0,-1),(1,0),(0,1),(-1,0)]:
@@ -342,6 +343,90 @@ def bfs_shortest_path(field: np.ndarray, start: Tuple[int, int], goal: Tuple[int
                 continue
             came[(nx, ny)] = (cx, cy)
             q.append((nx, ny))
+    return None
+
+def bfs_shortest_path_crate(field: np.ndarray, start: Tuple[int, int], goal: Tuple[int, int],
+                            explosions: Optional[np.ndarray] = None) -> Optional[List[Tuple[int, int]]]:
+    """
+    Shortest path from start to:
+      - goal (if goal is passable), OR
+      - one of the passable neighbors of the goal (if goal is a crate / not passable).
+    Returns path (list of (x,y)) ending on the passable cell next to the crate (not on the crate).
+    """
+    sx, sy = start
+    gx, gy = goal
+
+    # Basic bounds check
+    if not (in_bounds(field, sx, sy) and in_bounds(field, gx, gy)):
+        return None
+    if start == goal and is_free(field, sx, sy):
+        return [start]
+
+    # passable predicate (same semantics as your other BFS)
+    def passable(x: int, y: int) -> bool:
+        if not in_bounds(field, x, y):
+            return False
+        if not is_free(field, x, y):
+            return False
+        if explosions is not None and explosions[x, y] > 0:
+            return False
+        return True
+
+    # If goal is a normal passable cell, just do usual BFS termination on goal
+    goal_is_passable = is_free(field, gx, gy) and (explosions is None or explosions[gx, gy] == 0)
+
+    # If goal is a crate (not passable), compute the set of passable neighbour targets.
+    neighbour_targets = None
+    if not goal_is_passable:
+        neighbour_targets = []
+        for dx, dy in DELTAS:
+            nx, ny = gx + dx, gy + dy
+            if passable(nx, ny):
+                neighbour_targets.append((nx, ny))
+        if not neighbour_targets:
+            # no free neighbour to stand on -> crate unreachable
+            return None
+        neighbour_targets = set(neighbour_targets)  # for O(1) membership checks
+
+    # BFS that stops when it reaches either the goal (if passable) or any neighbour target.
+    q = deque([start])
+    came: Dict[Tuple[int, int], Optional[Tuple[int, int]]] = {start: None}
+    deltas = [(0, -1), (1, 0), (0, 1), (-1, 0)]
+
+    while q:
+        cx, cy = q.popleft()
+
+        # termination checks
+        if goal_is_passable and (cx, cy) == (gx, gy):
+            # reached goal itself
+            node = (cx, cy)
+            path = []
+            while node is not None:
+                path.append(node)
+                node = came[node]
+            return path[::-1]
+
+        if not goal_is_passable and (cx, cy) in neighbour_targets:
+            # reached a passable neighbour of crate -> return path to that neighbour
+            node = (cx, cy)
+            path = []
+            while node is not None:
+                path.append(node)
+                node = came[node]
+            return path[::-1]
+
+        for dx, dy in deltas:
+            nx, ny = cx + dx, cy + dy
+            if not in_bounds(field, nx, ny):
+                continue
+            if (nx, ny) in came:
+                continue
+            if not passable(nx, ny):
+                continue
+            came[(nx, ny)] = (cx, cy)
+            q.append((nx, ny))
+
+    # nothing found
     return None
 
 def nearest_safe_coin(field: np.ndarray, self_info, coins: List[Tuple[int,int]], explosions: np.ndarray
@@ -641,7 +726,8 @@ def should_plant_bomb(game_state: Dict,
     # 2) Detect targets (opponents / crates)
     opponents_hit = []
     crates_hit = []
-    for ox, oy in others:
+    for opp in others:
+        ox, oy = opp[-1]
         if in_bounds(field, ox, oy) and blast_mask[ox, oy]:
             opponents_hit.append((ox, oy))
     xs, ys = np.where(blast_mask)
@@ -695,6 +781,71 @@ def should_plant_bomb(game_state: Dict,
             "escape_distance": safe_distance}
 
 
+## Nearest Crate
+def nearest_crate_action(field: np.ndarray, self_info, explosions: np.ndarray) -> Dict:
+    """
+    Find the nearest crate (field == 1) that can be reached safely.
+    Returns a dict:
+    {
+        "crate_available": "yes" | "no",
+        "crate_action": str,          # e.g., "UP", "RIGHT", "DOWN", "LEFT", or "WAIT"
+        "crate_pos": (x, y) | None,
+        "crate_distance": float | None,
+        "crate_reason": str
+    }
+    Tie-breaking: smaller x first, then smaller y.
+    """
+    me = get_self_pos(self_info)
+    if me is None:
+        return {"crate_available": "no", "crate_action": "WAIT",
+                "crate_pos": None, "crate_distance": None,
+                "crate_reason": "Self position unavailable."}
+    # Find all crate coordinates
+    crate_coords = list(zip(*np.where(field == 1)))
+    if not crate_coords:
+        return {"crate_available": "no", "crate_action": "WAIT",
+                "crate_pos": None, "crate_distance": None,
+                "crate_reason": "No crates available on the map."}
+    # Compute BFS distances from agent position
+    dist = bfs_distance(field, me, explosions)
+    # Find reachable crates
+    reachable_crates = []
+    for cx, cy in crate_coords:
+        path_to_adj = bfs_shortest_path_crate(field, me, (cx, cy), explosions)
+        if path_to_adj is None:
+            continue
+        dist = len(path_to_adj) - 1
+        reachable_crates.append((cx, cy, path_to_adj, dist))
+    if not reachable_crates:
+        return {"crate_available": "no", "crate_action": "WAIT",
+                "crate_pos": None, "crate_distance": None,
+                "crate_reason": "No reachable crates found."}
+    # sort by distance then x then y
+    reachable_crates.sort(key=lambda t: (t[3], t[0], t[1]))
+    tx, ty, path, d = reachable_crates[0]
+
+    if not path or len(path) < 2:
+        # Either no path found or already adjacent to crate
+        return {
+            "crate_available": "yes",
+            "crate_action": "WAIT",
+            "crate_pos": (int(tx), int(ty)),
+            "crate_distance": float(d),
+            "crate_reason": (
+                "Already adjacent to crate."
+                if path and len(path) == 1
+                else "Crate reachable but no path found."
+            ),
+        }
+    action = next_action_toward(path[0], path[1])
+    return {
+        "crate_available": "yes",
+        "crate_action": action,
+        "crate_pos": (int(tx), int(ty)),
+        "crate_distance": float(d),
+        "crate_reason": "Nearest crate identified and reachable."
+    }
+    
 ## Extras
 def coins_within_k_steps(field: np.ndarray, self_info, coins: List[Tuple[int,int]],
                          explosions: np.ndarray, k: int) -> List[Tuple[int,int]]:

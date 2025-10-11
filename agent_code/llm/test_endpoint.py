@@ -35,12 +35,15 @@ from agent_code.llm.helper import \
     check_valid_movement, \
     find_escape_direction, \
     blast_cells_from, \
-    bfs_distance_avoid
+    bfs_distance_avoid, \
+    nearest_crate_action, \
+    bfs_shortest_path_crate
 
 
 def get_llm_action(round, step):
     game_state, payload, results, field, self_info, others, coins, bombs, explosions, lead_margin = load_data(round, step)
     valid_movement = check_valid_movement(field, self_info)
+    nearest_crate = nearest_crate_action(field, self_info, explosions)
     bomb_radius_data = check_bomb_radius_and_escape(field, self_info, bombs, explosions)
     plant_bomb_full_data = should_plant_bomb(game_state,field,self_info,others)
     coins_collection_data = coin_collection_policy(field, self_info, coins, explosions, others, lead_margin) 
@@ -51,6 +54,7 @@ def get_llm_action(round, step):
     BOMBERMAN_AGENT_ENDPOINT = "http://0.0.0.0:6000"
     payload = {
         "valid_movement": json.dumps(valid_movement),
+        "nearest_crate": json.dumps(nearest_crate),
         "check_bomb_radius": json.dumps(bomb_radius_data),
         "plant_bomb_available": json.dumps(plant_bomb_data),
         "coins_collection_policy": json.dumps(coins_collection_data),
@@ -73,7 +77,7 @@ for step in range(1,14):
     action = get_llm_action(round, step)
     print(f"Step : {step}, Action Taken: {action}")
 
-step=8
+step=1
 game_state, payload, results, field, self_info, others, coins, bombs, explosions, lead_margin = load_data(round, step)
 valid_movement = check_valid_movement(field, self_info, bombs)
 bomb_radius_data = check_bomb_radius_and_escape(field, self_info, bombs, explosions)
@@ -81,8 +85,10 @@ plant_bomb_full_data = should_plant_bomb(game_state, field, self_info, bombs, ot
 coins_collection_data = coin_collection_policy(field, self_info, coins, explosions, others, lead_margin) 
 results
 
-x, y = get_self_pos(self_info)
-self_dist = bfs_distance(field, (x, y), explosions)
-self_dist[13][1]
-self_dist[15][3]
-escape_dir = find_escape_direction(field, (x, y), self_dist, bombs, explosions, debug=True)
+step=5
+game_state, payload, results, field, self_info, others, coins, bombs, explosions, lead_margin = load_data(round, step)
+valid_movement = check_valid_movement(field, self_info, bombs)
+bomb_radius_data = check_bomb_radius_and_escape(field, self_info, bombs, explosions)
+plant_bomb_full_data = should_plant_bomb(game_state, field, self_info, bombs, others)
+coins_collection_data = coin_collection_policy(field, self_info, coins, explosions, others, lead_margin) 
+results

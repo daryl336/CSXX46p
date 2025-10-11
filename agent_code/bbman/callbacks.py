@@ -30,13 +30,13 @@ IDX_TO_ACTION = {i: a for a, i in ACTION_TO_IDX.items()}
 # Enhanced Hyperparameters
 # -------------------------
 GAMMA = 0.9
-LR = 0.1
+LR = 0.0001
 EPS_START = 1.0
 EPS_END = 0.05
 
 BATCH_SIZE = 32
-REPLAY_SIZE = 10_000
-MIN_REPLAY_TO_LEARN = 2_000
+REPLAY_SIZE = 100
+MIN_REPLAY_TO_LEARN = 2_00
 TAU = 0.005                  # soft target update
 EPS_DECAY_STEPS = 300_000    # linear decay steps
 TRAIN_EVERY_K_STEPS = 4
@@ -375,7 +375,7 @@ def setup(self):
     self.state.tau = 0.005  # Soft target update parameter
     self.state.memory_size = 100_000
     self.state.min_memory_size = 2_000  # Start learning only after enough samples
-    self.state.save_path = "models/bbman_enhanced_checkpoint_400.pth"
+    self.state.save_path = "" #"models/bbman_enhanced_checkpoint_400.pth"
     # Check if MPS is available
     if torch.backends.mps.is_available():
         self.state.device = torch.device("mps")

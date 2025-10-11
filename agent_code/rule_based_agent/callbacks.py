@@ -205,5 +205,4 @@ def act(self, game_state):
             # Keep track of chosen action for cycle detection
             if a == 'BOMB':
                 self.bomb_history.append((x, y))
-            print(a)
             return a
