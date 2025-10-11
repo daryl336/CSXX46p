@@ -17,7 +17,7 @@ def state_to_features(game_state: dict):
 def check_valid_movement(field, self_info, bombs) -> List[str]:
     """
     Return the list of valid directional moves ["UP","RIGHT","DOWN","LEFT"].
-    A move is valid if the target cell is within bounds and field[ny, nx] == 0.
+    A move is valid if the target cell is within bounds and field[nx, ny] == 0.
     field: np.ndarray of shape (17,17) with values like -1 (wall), 0 (free), 1 (crate)
     self_info: tuple (name, score, bomb_possible, (x, y))
     """
@@ -26,19 +26,43 @@ def check_valid_movement(field, self_info, bombs) -> List[str]:
     x, y = get_self_pos(self_info)
     if x is None or y is None:
         return []
-    h, w = field.shape
+    w, h = field.shape
     def mark_bomb(bx, by):
         if not (0 <= bx < w and 0 <= by < h):
             return
-        field[by, bx] = -1
+        field[bx, by] = -1
+    def mark_blast_zone(bx, by):
+        if not (0 <= bx < w and 0 <= by < h):
+            return
+        field[bx, by] = -1
+        for dx, dy in DELTAS:
+            cx, cy = bx, by
+            for _ in range(3):  # typical blast radius = 3 tiles
+                cx += dx; cy += dy
+                if not (0 <= cx < w and 0 <= cy < h):
+                    break
+                if field[cx, cy] == -1:  # wall blocks blast
+                    break
+                field[cx, cy] = -1
+                if field[cx, cy] == 1:  # crate stops blast too
+                    break
     for b in bombs or []:
-        if isinstance(b, (tuple, list)):
-            if len(b) >= 3 and isinstance(b[0], (int, np.integer)) and isinstance(b[1], (int, np.integer)):
-                mark_bomb(int(b[0]), int(b[1]))
-            elif len(b) >= 2 and isinstance(b[0], (tuple, list)):
-                bx, by = b[0]
-                mark_bomb(int(bx), int(by))
-    # Note: arrays are indexed as field[ny, nx] = field[row, col] = field[y, x]
+        if b[1] == 0:
+            # Mark explosion since it is going to blow.
+            if isinstance(b, (tuple, list)):
+                if len(b) >= 3 and isinstance(b[0], (int, np.integer)) and isinstance(b[1], (int, np.integer)):
+                    mark_blast_zone(int(b[0]), int(b[1]))
+                elif len(b) >= 2 and isinstance(b[0], (tuple, list)):
+                    bx, by = b[0]
+                    mark_blast_zone(int(bx), int(by))
+        else:
+            # Mark bomb will do
+            if isinstance(b, (tuple, list)):
+                if len(b) >= 3 and isinstance(b[0], (int, np.integer)) and isinstance(b[1], (int, np.integer)):
+                    mark_bomb(int(b[0]), int(b[1]))
+                elif len(b) >= 2 and isinstance(b[0], (tuple, list)):
+                    bx, by = b[0]
+                    mark_bomb(int(bx), int(by))
     deltas = {
         "UP": (0, -1),
         "RIGHT": (1, 0),
@@ -61,7 +85,7 @@ def check_bomb_radius_and_escape(field: np.ndarray, self_info, bombs: List, expl
     x, y = get_self_pos(self_info)
     if x is None or y is None:
         return {"in_bomb_radius":"yes", "in_danger":"no", "escape_bomb_action":"WAIT"}
-    h, w = field.shape
+    w, h = field.shape
     # --- Step 1: Identify unsafe tiles ---
     unsafe = np.zeros_like(field, dtype=bool)
     # (a) Mark tiles that are currently exploding or scheduled
@@ -72,17 +96,17 @@ def check_bomb_radius_and_escape(field: np.ndarray, self_info, bombs: List, expl
     def mark_blast_zone(bx, by):
         if not (0 <= bx < w and 0 <= by < h):
             return
-        unsafe[by, bx] = True
+        unsafe[bx, by] = True
         for dx, dy in DELTAS:
             cx, cy = bx, by
             for _ in range(3):  # typical blast radius = 3 tiles
                 cx += dx; cy += dy
                 if not (0 <= cx < w and 0 <= cy < h):
                     break
-                if field[cy, cx] == -1:  # wall blocks blast
+                if field[cx, cy] == -1:  # wall blocks blast
                     break
-                unsafe[cy, cx] = True
-                if field[cy, cx] == 1:  # crate stops blast too
+                unsafe[cx, cy] = True
+                if field[cx, cy] == 1:  # crate stops blast too
                     break
     for b in bombs or []:
         if isinstance(b, (tuple, list)):
@@ -91,7 +115,7 @@ def check_bomb_radius_and_escape(field: np.ndarray, self_info, bombs: List, expl
             elif len(b) >= 2 and isinstance(b[0], (tuple, list)):
                 bx, by = b[0]
                 mark_blast_zone(int(bx), int(by))
-    in_danger = unsafe[y, x]
+    in_danger = unsafe[x, y]
     # --- Step 2: If not in danger, stay put ---
     if not in_danger:
         return {"in_bomb_radius":"no", "in_danger":"no", "escape_bomb_action":"WAIT"}
@@ -116,17 +140,17 @@ def find_escape_direction(field: np.ndarray,
     Returns None if no safe reachable cell or on failure.
     
     NOTES:
-    - `field` and `dist` are indexed as [y, x] (numpy convention).
+    - `field` and `dist` are indexed as [x, y] (numpy convention).
     - `start` must be (x, y) where 0 <= x < width and 0 <= y < height.
     """
-    h, w = field.shape
+    w, h = field.shape
     x0, y0 = int(start[0]), int(start[1])
     if hazard is None:
         hazard = np.zeros_like(field, dtype=np.float32)
     def mark_bomb(bx, by):
         if not (0 <= bx < w and 0 <= by < h):
             return
-        field[by, bx] = -1
+        field[bx, by] = -1
     for b in bombs or []:
         if isinstance(b, (tuple, list)):
             if len(b) >= 3 and isinstance(b[0], (int, np.integer)) and isinstance(b[1], (int, np.integer)):
@@ -147,10 +171,18 @@ def find_escape_direction(field: np.ndarray,
     # Vectorized: pick the cell with minimal distance among safe_mask
     # Replace non-candidates with +inf and argmin
     candidate_dist = np.where(safe_mask, dist, np.inf)
-    flat_idx = int(np.argmin(candidate_dist))           # flattened index
-    ty, tx = np.unravel_index(flat_idx, dist.shape)     # row (y), col (x)
+    # flat_idx = int(np.argmax(candidate_dist))           # flattened index
+    # tx, ty = np.unravel_index(flat_idx, dist.shape)     # row (y), col (x)
+    finite_mask = np.isfinite(candidate_dist)
+    if not np.any(finite_mask):
+        flat_idx = None  # or handle safely
+        if debug: print("[find_escape_direction] no safe candidate cells. flat_idx is none")
+        return None
+    else:
+        flat_idx = np.argmax(np.where(finite_mask, candidate_dist, -np.inf))
+        tx, ty = np.unravel_index(flat_idx, dist.shape)
     target = (int(tx), int(ty))
-    if debug: print(f"[find_escape_direction] chosen target {target} with dist {dist[ty,tx]}")
+    if debug: print(f"[find_escape_direction] chosen target {target} with dist {dist[tx,ty]}")
     # If already at a safe spot, no movement required
     if target == (x0, y0):
         if debug: print("[find_escape_direction] already at target (safe)")
@@ -174,7 +206,7 @@ def find_escape_direction(field: np.ndarray,
         if steps > max_steps:
             if debug: print("[find_escape_direction] exceeded max_steps during backtrack")
             return None
-        current_dist = dist[cy, cx]
+        current_dist = dist[cx, cy]
         if not np.isfinite(current_dist):
             if debug: print("[find_escape_direction] non-finite dist at current backtrack cell", (cx, cy))
             return None
@@ -184,7 +216,7 @@ def find_escape_direction(field: np.ndarray,
             nx, ny = cx - ddx, cy - ddy   # predecessor coordinates
             if not (0 <= nx < w and 0 <= ny < h):
                 continue
-            nd = dist[ny, nx]
+            nd = dist[nx, ny]
             if not np.isfinite(nd):
                 continue
             if dist_is_int:
@@ -228,7 +260,7 @@ def manhattan(a: Tuple[int,int], b: Tuple[int,int]) -> int:
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
 def in_bounds(field: np.ndarray, x: int, y: int) -> bool:
-    h, w = field.shape
+    w, h = field.shape
     return 0 <= x < w and 0 <= y < h
 
 def is_free(field: np.ndarray, x: int, y: int) -> bool:
@@ -245,20 +277,20 @@ def neighbors4(field: np.ndarray, x: int, y: int) -> List[Tuple[int,int]]:
 
 def safe_mask(field: np.ndarray, explosions: np.ndarray) -> np.ndarray:
     # Safe = free cell and explosions countdown == 0
-    h, w = field.shape
-    mask = np.zeros((h, w), dtype=bool)
+    w, h = field.shape
+    mask = np.zeros((w, h), dtype=bool)
     for y in range(h):
         for x in range(w):
-            mask[y, x] = (field[y, x] == 0) and (0 <= y < explosions.shape[0]) and (0 <= x < explosions.shape[1]) and (explosions[y, x] == 0)
+            mask[x, y] = (field[x, y] == 0) and (0 <= y < explosions.shape[0]) and (0 <= x < explosions.shape[1]) and (explosions[x, y] == 0)
     return mask
 
 def is_cell_safe(field: np.ndarray, explosions: np.ndarray, x: int, y: int) -> bool:
-    return is_free(field, x, y) and (explosions[y, x] == 0)
+    return is_free(field, x, y) and (explosions[x, y] == 0)
 
 def safe_neighbors4(field: np.ndarray, explosions: np.ndarray, x: int, y: int) -> List[Tuple[int,int]]:
     out = []
     for nx, ny in neighbors4(field, x, y):
-        if explosions[ny, nx] == 0:
+        if explosions[nx, ny] == 0:
             out.append((nx, ny))
     return out
 
@@ -267,9 +299,8 @@ def bfs_shortest_path(field: np.ndarray, start: Tuple[int, int], goal: Tuple[int
     """
     Return shortest path (list of (x,y) coordinates including start and goal)
     avoiding blocked or unsafe cells.
-    Convention: field[y, x] indexing.
+    Convention: field[x, y] indexing.
     """
-    h, w = field.shape
     sx, sy = start
     gx, gy = goal
     # Validate start/goal
@@ -284,7 +315,7 @@ def bfs_shortest_path(field: np.ndarray, start: Tuple[int, int], goal: Tuple[int
     def passable(x: int, y: int) -> bool:
         if not is_free(field, x, y):
             return False
-        if explosions is not None and explosions[y, x] > 0:
+        if explosions is not None and explosions[x, y] > 0:
             return False
         return True
     q = deque([start])
@@ -351,18 +382,19 @@ def bfs_distance(field: np.ndarray,
                  dtype: np.dtype = np.float32) -> np.ndarray:
     """
     BFS distances (unweighted) from start -> returns float array with np.inf for unreachable.
-    Coordinate convention: start is (x, y) where x is column, y is row; arrays are indexed [y, x].
+    Coordinate convention: start is (x, y) where x is column, y is row; arrays are indexed [x, y].
     """
-    h, w = field.shape
+    w, h = field.shape
     # allocate dist as float with np.inf sentinel
-    dist = np.full((h, w), np.inf, dtype=dtype)
+    dist = np.full((w, h), np.inf, dtype=dtype)
     x0, y0 = int(start[0]), int(start[1])
     # bounds check
     if not (0 <= x0 < w and 0 <= y0 < h):
+        print("Bound check failed")
         return dist
-    # start must be passable (field == 0)
-    if field[y0, x0] != 0:
-        return dist
+    # # start must be passable (field == 0)
+    # if field[x0, y0] != 0:
+    #     return dist
     # handle hazard shape mismatch by ignoring hazard (same as your original choice)
     if hazard is not None and hazard.shape != field.shape:
         hazard = None
@@ -371,10 +403,11 @@ def bfs_distance(field: np.ndarray,
     if hazard is not None:
         # treat hazard > 0 as blocked
         passable = passable & (hazard <= 0)
-    if not passable[y0, x0]:
-        return dist
+    # if not passable[x0, y0]:
+    #     print(f"Not passable {[x0, y0]}")
+    #     return dist
     dq = deque()
-    dist[y0, x0] = 0.0
+    dist[x0, y0] = 0.0
     dq.append((x0, y0))
     # local references for speed
     dist_arr = dist
@@ -385,7 +418,7 @@ def bfs_distance(field: np.ndarray,
     # BFS loop
     while dq:
         x, y = dq.popleft()
-        d0 = dist_arr[y, x]  # correct indexing: [row, col] = [y, x]
+        d0 = dist_arr[x, y]
         # iterate neighbors
         for dx, dy in deltas:
             nx, ny = x + dx, y + dy
@@ -393,11 +426,11 @@ def bfs_distance(field: np.ndarray,
             if nx < 0 or nx >= w or ny < 0 or ny >= h:
                 continue
             # passable and not visited
-            if not passable_arr[ny, nx]:
+            if not passable_arr[nx, ny]:
                 continue
-            if dist_arr[ny, nx] != inf:
+            if dist_arr[nx, ny] != inf:
                 continue
-            dist_arr[ny, nx] = d0 + 1.0
+            dist_arr[nx, ny] = d0 + 1.0
             dq.append((nx, ny))
     return dist
 
@@ -422,7 +455,7 @@ def choose_coin_opponent_aware(field: np.ndarray, self_info, coins: List[Tuple[i
     me = get_self_pos(self_info)
     if me is None or not coins:
         return None
-    # compute distance maps (dist[y, x])
+    # compute distance maps (dist[x, y])
     self_dist = bfs_distance(field, me, explosions)
     opps = get_others_positions(others)
     opp_dists = [bfs_distance(field, op, explosions) for op in opps]  # list of dist arrays
@@ -431,13 +464,13 @@ def choose_coin_opponent_aware(field: np.ndarray, self_info, coins: List[Tuple[i
         cx, cy = int(c[0]), int(c[1])
         if not in_bounds(field, cx, cy):
             continue
-        # --- CORRECT INDEXING: dist is [y, x] ---
-        sd = self_dist[cy, cx]            # self ETA to coin (float or inf)
+        # --- CORRECT INDEXING: dist is [x, y] ---
+        sd = self_dist[cx, cy]            # self ETA to coin (float or inf)
         if not np.isfinite(sd):
             continue
         # minimal opponent ETA (to same coin) — default INF if no opponents
         if opp_dists:
-            od_min = min((od[cy, cx] for od in opp_dists))
+            od_min = min((od[cx, cy] for od in opp_dists))
         else:
             od_min = np.inf
         # lead = opponent ETA - self ETA  (positive -> we arrive earlier)
@@ -524,21 +557,21 @@ def blast_cells_from(pos: Tuple[int,int], field: np.ndarray, blast_strength: int
     Returns a boolean mask with True where a bomb at `pos` would hit.
     Stops at rigid wall (-1). Blast reaches crates (1) but won’t go past them.
     """
-    h, w = field.shape
-    mask = np.zeros((h, w), dtype=bool)
+    w, h = field.shape
+    mask = np.zeros((w, h), dtype=bool)
     x0, y0 = pos
     if not in_bounds(field, x0, y0):
         return mask
-    mask[y0, x0] = True
+    mask[x0, y0] = True
     for dx, dy in DELTAS:
         for step in range(1, blast_strength + 1):
             nx, ny = x0 + dx * step, y0 + dy * step
             if not in_bounds(field, nx, ny):
                 break
-            if field[ny, nx] == -1:  # wall
+            if field[nx, ny] == -1:  # wall
                 break
-            mask[ny, nx] = True
-            if field[ny, nx] == 1:  # crate stops blast
+            mask[nx, ny] = True
+            if field[nx, ny] == 1:  # crate stops blast
                 break
     return mask
 
@@ -549,8 +582,8 @@ def bfs_distance_avoid(field: np.ndarray, start: Tuple[int,int],
     BFS distances from start avoiding cells where avoid_mask is True.
     Returns float array (np.inf for unreachable).
     """
-    h, w = field.shape
-    dist = np.full((h, w), np.inf, dtype=np.float32)
+    w, h = field.shape
+    dist = np.full((w, h), np.inf, dtype=np.float32)
     sx, sy = start
     if not in_bounds(field, sx, sy):
         return dist
@@ -566,7 +599,7 @@ def bfs_distance_avoid(field: np.ndarray, start: Tuple[int,int],
     dq.append((sx, sy))
     while dq:
         x, y = dq.popleft()
-        d = dist[y, x]
+        d = dist[x, y]
         # stop exploring *after* reaching max_depth
         if max_depth is not None and d > max_depth:
             continue
@@ -574,19 +607,20 @@ def bfs_distance_avoid(field: np.ndarray, start: Tuple[int,int],
             nx, ny = x + dx, y + dy
             if not in_bounds(field, nx, ny):
                 continue
-            if dist[ny, nx] != np.inf:
+            if dist[nx, ny] != np.inf:
                 continue
             if not is_free(field, nx, ny):
                 continue
-            if avoid_mask[ny, nx]:
+            if avoid_mask[nx, ny]:
                 continue
-            dist[ny, nx] = d + 1.0
+            dist[nx, ny] = d + 1.0
             dq.append((nx, ny))
     return dist
 
 def should_plant_bomb(game_state: Dict,
                       field: np.ndarray,
                       self_info: Tuple,
+                      bombs: List,
                       others: List,
                       blast_strength: int = 3,
                       explosion_timer: int = 3,
@@ -595,6 +629,10 @@ def should_plant_bomb(game_state: Dict,
     Decide if planting a bomb now is sensible.
     Adds condition: bomb must be adjacent to at least one crate to be worth planting.
     """
+    if bombs:
+        current_status = "Bomb is present, hide from bomb!"
+    else:
+        current_status = "No bomb detected."
     if field is None or self_info is None:
         return {"plant": "false", "reason": "missing field or self position", "targets": None, "escape_distance": None}
     sx, sy = get_self_pos(self_info)
@@ -603,13 +641,12 @@ def should_plant_bomb(game_state: Dict,
     # 2) Detect targets (opponents / crates)
     opponents_hit = []
     crates_hit = []
-    h, w = field.shape
     for ox, oy in others:
-        if in_bounds(field, ox, oy) and blast_mask[oy, ox]:
+        if in_bounds(field, ox, oy) and blast_mask[ox, oy]:
             opponents_hit.append((ox, oy))
-    ys, xs = np.where(blast_mask)
-    for y, x in zip(ys, xs):
-        if field[y, x] == 1:
+    xs, ys = np.where(blast_mask)
+    for x, y in zip(xs, ys):
+        if field[x, y] == 1:
             crates_hit.append((x, y))
     # 3) Compute escape route avoiding blast
     avoid_mask = blast_mask.copy()
@@ -622,7 +659,7 @@ def should_plant_bomb(game_state: Dict,
     adjacent_to_crate = False
     for dx, dy in DELTAS:
         nx, ny = sx + dx, sy + dy
-        if in_bounds(field, nx, ny) and field[ny, nx] == 1:
+        if in_bounds(field, nx, ny) and field[nx, ny] == 1:
             adjacent_to_crate = True
             break
     # 6) Decision logic
@@ -633,22 +670,27 @@ def should_plant_bomb(game_state: Dict,
         reasons.append(f"crate_in_blast: {len(crates_hit)}")
     if not opponents_hit and not crates_hit:
         return {"plant": "false", "reason": "no opponent or crate in blast footprint", 
+                "current_status": current_status,
                 "targets": {"opponents": opponents_hit, "crates": crates_hit}, 
                 "escape_distance": safe_distance}
     if not adjacent_to_crate and not opponents_hit:
         return {"plant": "false", "reason": "not adjacent to crate", 
+                "current_status": current_status,
                 "targets": {"opponents": opponents_hit, "crates": crates_hit}, 
                 "escape_distance": safe_distance}
     if safe_distance is None:
         if opponents_hit and allow_suicide:
             return {"plant": "true", "reason": "no escape but opponents will be hit (suicide allowed)",
+                    "current_status": current_status,
                     "targets": {"opponents": opponents_hit, "crates": crates_hit},
                     "escape_distance": None}
         return {"plant": "false", "reason": "no safe escape within explosion timer",
+                "current_status": current_status,
                 "targets": {"opponents": opponents_hit, "crates": crates_hit},
                 "escape_distance": None}
     # safe + valid target
     return {"plant": "true", "reason": "safe escape available and target in blast",
+            "current_status": current_status,
             "targets": {"opponents": opponents_hit, "crates": crates_hit},
             "escape_distance": safe_distance}
 

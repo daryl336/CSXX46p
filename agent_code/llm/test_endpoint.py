@@ -31,7 +31,6 @@ from agent_code.llm.helper import \
     in_bounds, \
     bfs_shortest_path, \
     should_plant_bomb, \
-    check_bomb_radius, \
     check_bomb_radius_and_escape, \
     check_valid_movement, \
     find_escape_direction, \
@@ -74,17 +73,16 @@ for step in range(1,14):
     action = get_llm_action(round, step)
     print(f"Step : {step}, Action Taken: {action}")
 
-step=3
+step=8
 game_state, payload, results, field, self_info, others, coins, bombs, explosions, lead_margin = load_data(round, step)
-valid_movement = check_valid_movement(field, self_info)
+valid_movement = check_valid_movement(field, self_info, bombs)
 bomb_radius_data = check_bomb_radius_and_escape(field, self_info, bombs, explosions)
-plant_bomb_full_data = should_plant_bomb(game_state,field,self_info,others)
+plant_bomb_full_data = should_plant_bomb(game_state, field, self_info, bombs, others)
 coins_collection_data = coin_collection_policy(field, self_info, coins, explosions, others, lead_margin) 
 results
-explosions[3][15]
-field[2][15]
 
 x, y = get_self_pos(self_info)
 self_dist = bfs_distance(field, (x, y), explosions)
-# Get the first move toward nearest safe cell
-escape_dir = find_escape_direction(field, (x, y), self_dist, explosions, debug=True)
+self_dist[13][1]
+self_dist[15][3]
+escape_dir = find_escape_direction(field, (x, y), self_dist, bombs, explosions, debug=True)

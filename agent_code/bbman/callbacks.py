@@ -288,7 +288,7 @@ class AgentState:
     epsilon: float = EPS_START
     rounds: int = 0
     save_dir: str = "models"
-    save_path: str = "bbman_enhanced_checkpoint_8700.pth"
+    save_path: str = "bbman_enhanced_checkpoint_150.pth"
     frame_buffer: Optional[deque] = None
     beta: float = 0.4  # Importance sampling parameter
     beta_increment: float = 0.001

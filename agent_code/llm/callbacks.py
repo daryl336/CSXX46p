@@ -23,11 +23,15 @@ def act(self, game_state):
     explosions = game_state.get('explosion_map', np.zeros((17, 17)))
     lead_margin=1
     print(f"Round : {round}, Step : {step}")
-    valid_movement = check_valid_movement(field, self_info)
+    valid_movement = check_valid_movement(field, self_info, bombs)
     bomb_radius_data = check_bomb_radius_and_escape(field, self_info, bombs, explosions)
-    plant_bomb_full_data = should_plant_bomb(game_state,field,self_info,others)
+    plant_bomb_full_data = should_plant_bomb(game_state, field, self_info, bombs, others)
     coins_collection_data = coin_collection_policy(field, self_info, coins, explosions, others, lead_margin) 
-    plant_bomb_data = {"plant":plant_bomb_full_data.get("plant"), "reason":plant_bomb_full_data.get("reason")}
+    plant_bomb_data = {
+        "plant":plant_bomb_full_data.get("plant"), 
+        "reason":plant_bomb_full_data.get("reason"),
+        "current_status":plant_bomb_full_data.get("current_status"),
+        }
     payload = {
         "valid_movement": json.dumps(valid_movement),
         "check_bomb_radius": json.dumps(bomb_radius_data),
