@@ -88,9 +88,9 @@ def act(self, game_state):
     which is a dictionary. Consult 'get_state_for_agent' in environment.py to see
     what it contains.
     """
-    import pickle
-    with open("game_state.pkl", 'wb') as f:
-        pickle.dump(game_state, f)
+    # import pickle
+    # with open("game_state.pkl", 'wb') as f:
+    #     pickle.dump(game_state, f)
     self.logger.info('Picking action according to rule set')
     # Check if we are in a different round
     if game_state["round"] != self.current_round:
@@ -205,5 +205,5 @@ def act(self, game_state):
             # Keep track of chosen action for cycle detection
             if a == 'BOMB':
                 self.bomb_history.append((x, y))
-
+            print(a)
             return a
