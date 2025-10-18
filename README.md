@@ -59,6 +59,29 @@ python -m main play \
   --train 1 \
   --n-round 50000 \
   --no-gui
+
+python -m main play \
+  --agents ppo \
+  --train 1 \
+  --n-round 10000 \
+  --no-gui
+
+```
+
+```
+Coin Collection Phase:
+python -m main play \
+  --agents bbman \
+  --train 1 \
+  --n-round 10000 \
+  --no-gui
+
+Bomb Placement Phase:
+python -m main play \
+  --agents bbman \
+  --train 1 \
+  --n-round 1000 \
+  --no-gui
 ```
 
 Play agent:
@@ -68,4 +91,8 @@ python -m main play --agents scully
 python -m main play --agents scully dqn_torch rule_based_agent
 python -m main play --agents scully bbman rule_based_agent
 python -m main play --agents rule_based_agent
+python -m main play --agents bbman
+python -m main play --agents llm
+python -m main play --agents q_learning
+python -m main play --agents ppo
 ```

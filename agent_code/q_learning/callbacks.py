@@ -5,34 +5,30 @@ import random
 import numpy as np
 
 
+# ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT']
 ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
 
 
 def setup(self):
     """
-    Setup your code. This is called once when loading each agent.
-    Make sure that you prepare everything such that act(...) can be called.
-
-    When in training mode, the separate `setup_training` in train.py is called
-    after this method. This separation allows you to share your trained agent
-    with other students, without revealing your training code.
-
-    In this example, our model is a set of probabilities over actions
-    that are is independent of the game state.
-
-    :param self: This object is passed to all callbacks and you can set arbitrary values.
+    Setup Q-table and hyperparameters.
+    Loads saved model if available for continued training.
     """
-    """Setup Q-table"""
-    if self.train or not os.path.isfile("my-saved-model.pt"):
-        self.logger.info("Setting up model from scratch.")
-        self.model = {}  # Q-table: {state: {action: value}}
-    else:
-        self.logger.info("Loading model from saved state.")
-        with open("my-saved-model.pt", "rb") as file:
-            self.model = pickle.load(file)
+    model_path = "my-saved-model.pt"
 
+    if os.path.isfile(model_path):
+        print("Loading existing model for continued training...")
+        with open(model_path, "rb") as file:
+            self.model = pickle.load(file)
+    else:
+        print("No existing model found. Starting new Q-table.")
+        self.model = {}
+
+    self.epsilon = getattr(self, "epsilon", 1.0)     # exploration rate
+    
     # Hyperparameters
-    self.epsilon = 0.15  # exploration rate
+    # self.epsilon = max(0.05, self.epsilon * 0.995)  # exploration rate
+    self.eplison = 0.2
     self.alpha = 0.1  # learning rate
     self.gamma = 0.9  # discount factor
 
@@ -50,7 +46,7 @@ def act(self, game_state: dict) -> str:
     # Epsilon-greedy exploration
     if self.train and random.random() < self.epsilon:
         self.logger.debug("Exploring: choosing random action")
-        return np.random.choice(ACTIONS, p=[.2, .2, .2, .2, .15, .05])
+        return np.random.choice(ACTIONS, p=[.2, .2, .2, .2, .15, .05])  # biased random choice
 
     # Exploitation: choose best action based on Q-values
     if features not in self.model:

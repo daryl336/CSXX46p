@@ -27,37 +27,36 @@ def setup_training(self):
 def game_events_occurred(self, old_game_state: dict, self_action: str,
                          new_game_state: dict, events: List[str]):
     """
-    Update Q-values based on the transition.
-    This is called after each action during training.
+    Update Q-values based on transition and apply shaped rewards.
 
-    :param self: This object is passed to all callbacks and you can set arbitrary values.
-    :param old_game_state: The state that was passed to the last call of `act`.
-    :param self_action: The action that you took.
-    :param new_game_state: The state the agent is in now.
-    :param events: The events that occurred when going from old_game_state to new_game_state
+    This version includes:
+    - Dynamic custom event detection (toward/away from coin, danger awareness)
+    - Dense reward shaping for more efficient learning
+    - Safe Q-value update checks
     """
-    self.logger.debug(f'Encountered game event(s) {", ".join(map(repr, events))} in step {new_game_state["step"]}')
 
-    # Add custom events based on game state analysis
+    self.logger.debug(f'Encountered game event(s): {", ".join(map(repr, events))}')
+
+    # === Add custom shaping events ===
     events = add_custom_events(old_game_state, new_game_state, events)
 
-    # Calculate reward
+    # === Compute reward ===
     reward = reward_from_events(self, events)
-    self.total_reward += reward
+    self.total_reward = getattr(self, "total_reward", 0) + reward
 
-    # Extract features
+    # === Feature extraction ===
     old_features = state_to_features(old_game_state)
     new_features = state_to_features(new_game_state)
 
-    # Skip update if features are invalid
+    # === Skip invalid feature transitions ===
     if old_features is None or new_features is None:
-        self.logger.warning("Skipping Q-update due to None features")
+        self.logger.warning("Skipping Q-update due to invalid (None) features.")
         return
 
-    # Q-learning update
+    # === Q-learning update ===
     update_q_value(self, old_features, self_action, reward, new_features)
 
-    self.logger.debug(f'Reward for this step: {reward}')
+    self.logger.debug(f"Reward: {reward:.2f}, Total reward so far: {self.total_reward:.2f}")
 
 
 def end_of_round(self, last_game_state: dict, last_action: str, events: List[str]):
@@ -192,38 +191,61 @@ def add_custom_events(old_game_state, new_game_state, events):
     return events
 
 
-def reward_from_events(self, events: List[str]) -> int:
+def reward_from_events(self, events: list) -> int:
     """
-    Calculate reward based on events that occurred.
-    Modify these values to shape agent behavior.
+    Advanced reward shaping for Bomberman Q-learning.
+    Designed for Phase 1–2 training: coin collection and safe bomb usage.
+    """
 
-    :param self: Agent object
-    :param events: List of events that occurred
-    :return: Total reward
-    """
+    # === Base event rewards ===
     game_rewards = {
-        # Official events
-        e.COIN_COLLECTED: 10,
-        e.KILLED_OPPONENT: 50,
+        # Core game events
+        e.COIN_COLLECTED: +10,
+        e.CRATE_DESTROYED: +5,
+        e.BOMB_DROPPED: +1,
         e.KILLED_SELF: -25,
         e.GOT_KILLED: -20,
+        e.KILLED_OPPONENT: +50,
         e.INVALID_ACTION: -5,
         e.WAITED: -0.5,
-        e.BOMB_DROPPED: 2,
-        e.CRATE_DESTROYED: 5,
-        e.COIN_FOUND: 5,
 
-        # Custom events
-        'MOVED_TOWARDS_COIN': 1,
-        'MOVED_AWAY_FROM_COIN': -1,
-        'WAITED_UNNECESSARILY': -2,
-        'MOVED_INTO_DANGER': -1,
+        # Custom helper events (defined in your loop or feature extractor)
+        'MOVED_TOWARDS_COIN': +1.0,
+        'MOVED_AWAY_FROM_COIN': -1.0,
+        'WAITED_UNNECESSARILY': -2.0,
+        'MOVED_INTO_DANGER': -2.0,
+        'ESCAPED_DANGER': +2.0,
+        'SAFE_MOVE': +0.3,   # Encourage movement instead of waiting
     }
 
-    reward_sum = 0
-    for event in events:
-        if event in game_rewards:
-            reward_sum += game_rewards[event]
+    # === Compute base reward from listed events ===
+    reward_sum = sum(game_rewards.get(ev, 0) for ev in events)
 
-    self.logger.debug(f"Awarded {reward_sum} for events {', '.join(events)}")
+    # === Optional dynamic shaping (state-aware bonuses) ===
+    # Add this *only if you pass `self.prev_game_state` in your agent loop
+    try:
+        old_state = self.prev_game_state
+        new_state = self.curr_game_state
+        if old_state is not None and new_state is not None:
+            old_x, old_y = old_state["self"][3]
+            new_x, new_y = new_state["self"][3]
+            coins = new_state["coins"]
+
+            # Distance-based shaping: reward for moving closer to nearest coin
+            if coins:
+                old_min_dist = min(abs(c[0]-old_x) + abs(c[1]-old_y) for c in coins)
+                new_min_dist = min(abs(c[0]-new_x) + abs(c[1]-new_y) for c in coins)
+
+                if new_min_dist < old_min_dist:
+                    reward_sum += 0.5   # moved closer
+                elif new_min_dist > old_min_dist:
+                    reward_sum -= 0.5   # moved away
+    except Exception:
+        # Fail gracefully (during first step or missing prev state)
+        pass
+
+    # === Reward clipping for stability ===
+    reward_sum = np.clip(reward_sum, -20, +20)
+
+    self.logger.debug(f"Awarded {reward_sum:.2f} for events {', '.join(events)}")
     return reward_sum

@@ -375,7 +375,7 @@ def setup(self):
     self.state.tau = 0.005  # Soft target update parameter
     self.state.memory_size = 100_000
     self.state.min_memory_size = 2_000  # Start learning only after enough samples
-    self.state.save_path = "" #"models/bbman_enhanced_checkpoint_400.pth"
+    self.state.save_path = "models/bbman_enhanced_checkpoint_1100.pth"
     # Check if MPS is available
     if torch.backends.mps.is_available():
         self.state.device = torch.device("mps")
