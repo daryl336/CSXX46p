@@ -27,10 +27,14 @@ import copy
 # 5 | 200     | 0.6-0.0001 | 0.75   | 0   | Test5 |
 
 #Hyperparameter for Training
-TRAIN_FROM_SCRETCH = True
-LOAD = 'end_long_training'
+# Set to False when using --train flag for EVALUATION with metrics (not actual training)
+TRAIN_FROM_SCRETCH = False  # Changed to False - load existing model even during "training" mode
+LOAD = 'final_parameters'   # Load the trained model
 # LOAD = 'end_coin_training_1'
 SAVE = 'save after 20000 iterations'
+
+# Flag to distinguish actual training from evaluation with metrics
+EVALUATE_WITH_METRICS = True  # Set to True to disable epsilon-greedy during evaluation
 
 # Exploration: Start with full exploration (1.0) and decay to 0.01
 # Higher initial exploration helps agent discover diverse strategies
@@ -63,7 +67,10 @@ def setup_training(self):
     :param self: This object is passed to all callbacks and you can set arbitrary values.
     """
     if not TRAIN_FROM_SCRETCH: #load current parameters
-        self.network.load_state_dict(torch.load(f'network_parameters\{LOAD}.pt'))
+        import os
+        agent_dir = os.path.dirname(os.path.abspath(__file__))
+        model_path = os.path.join(agent_dir, 'network_parameters', f'{LOAD}.pt')
+        self.network.load_state_dict(torch.load(model_path))
         self.network.eval()
 
     self.network.initialize_training(LEARNING_RATE, DISCOUNTING_FACTOR, EPSILON, #setup training

@@ -57,14 +57,20 @@ def setup(self):
     """
     self.network = Maverick()
 
-    if self.train:
-        self.logger.info("Trainiere ein neues Model.")
+    # Always load the trained model for evaluation
+    # (even if --train flag is used for metrics tracking)
+    agent_dir = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(agent_dir, "network_parameters", f'{PARAMETERS}.pt')
 
-    else:
-        self.logger.info(f"Lade Model '{PARAMETERS}'.")
-        filename = os.path.join("network_parameters", f'{PARAMETERS}.pt')
-        self.network.load_state_dict(torch.load(filename))
+    if os.path.exists(model_path):
+        self.logger.info(f"Loading trained model '{PARAMETERS}' from {model_path}")
+        self.network.load_state_dict(torch.load(model_path))
         self.network.eval()
+    else:
+        if self.train:
+            self.logger.info("Training a new model from scratch (no saved model found).")
+        else:
+            self.logger.warning(f"Model file not found: {model_path}. Using untrained network!")
 
     initialize_rule_based(self)
 
@@ -136,7 +142,11 @@ def act(self, game_state: dict) -> str:
     features = state_to_features(self, game_state)
     Q = self.network(features)
 
-    if self.train: # Exploration vs exploitation during training
+    # Only use epsilon-greedy exploration if actively training (not just evaluating with metrics)
+    # Check if EVALUATE_WITH_METRICS flag is set
+    from .train import EVALUATE_WITH_METRICS
+
+    if self.train and hasattr(self, 'epsilon_arr') and hasattr(self, 'episode_counter') and not EVALUATE_WITH_METRICS:
         eps = self.epsilon_arr[self.episode_counter]
         if random.random() <= eps: # choose random action
             if eps > 0.1:
@@ -196,7 +206,13 @@ def act(self, game_state: dict) -> str:
     # STEP 4: Check if LLM should be triggered (SMART TRIGGERING)
     final_action = maverick_best_action  # Default fallback to Maverick
 
-    if self.llm_available and not self.train:  # Only use LLM during inference
+    # LLM should be enabled during:
+    # 1. Normal play mode (self.train=False)
+    # 2. Evaluation with metrics (self.train=True but EVALUATE_WITH_METRICS=True)
+    # LLM should be disabled only during actual training (EVALUATE_WITH_METRICS=False)
+    use_llm = self.llm_available and (not self.train or EVALUATE_WITH_METRICS)
+
+    if use_llm:
         # Check if we should call LLM based on behavioral loops, uncertainty, and bomb decisions
         should_call_llm, trigger_reason = should_trigger_llm(
             self, game_state, Q_values, top_3_actions,
