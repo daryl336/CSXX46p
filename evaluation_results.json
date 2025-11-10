@@ -1,0 +1,30 @@
+{
+  "rankings": [
+    {
+      "rank": 1,
+      "agent": "maverick",
+      "episodes": 20,
+      "avg_reward": 61.5,
+      "total_reward": 1230.0,
+      "win_rate": 5.0,
+      "coins": 48,
+      "avg_coins": 2.4,
+      "kills": 0,
+      "deaths": 0,
+      "survival_rate": 100
+    },
+    {
+      "rank": 2,
+      "agent": "q_learning",
+      "episodes": 20,
+      "avg_reward": 12.3,
+      "total_reward": 246.0,
+      "win_rate": 0.0,
+      "coins": 3,
+      "avg_coins": 0.15,
+      "kills": 0,
+      "deaths": 0,
+      "survival_rate": 100
+    }
+  ]
+}

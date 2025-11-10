@@ -63,9 +63,26 @@ python -m main play \
 python -m main play \
   --agents ppo \
   --train 1 \
-  --n-round 10000 \
+  --n-round 1000 \
   --no-gui
 
+python -m main play \
+  --agents q_learning \
+  --train 1 \
+  --n-round 2000 \
+  --no-gui
+
+python -m main play \
+  --agents q_learning \
+  --train 1 \
+  --n-round 8000 \
+  --no-gui
+
+python -m main play \
+  --agents q_learning rule_based_agent \
+  --train 1 \
+  --n-round 20000 \
+  --no-gui
 ```
 
 ```

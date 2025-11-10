@@ -49,7 +49,11 @@ class EpisodeMetrics:
     total_actions: int = 0
     invalid_actions: int = 0
     action_distribution: Dict[str, int] = field(default_factory=dict)
-    
+
+    # Event tracking
+    events: List[str] = field(default_factory=list)
+    actions: List[str] = field(default_factory=list)
+
     # Reward metrics
     total_reward: float = 0.0
     reward_breakdown: Dict[str, float] = field(default_factory=dict)
@@ -97,6 +101,7 @@ class MetricsTracker:
         # Current episode tracking
         self.current_episode: Optional[EpisodeMetrics] = None
         self.episode_events: List[str] = []
+        self.episode_actions: List[str] = []
         self.episode_start_step: int = 0
         
         # Historical data
@@ -137,6 +142,7 @@ class MetricsTracker:
             scenario=scenario
         )
         self.episode_events = []
+        self.episode_actions = []
         self.episode_start_step = 0
         
     def record_action(self, action: str, is_valid: bool = True):
@@ -149,7 +155,9 @@ class MetricsTracker:
         """
         if self.current_episode is None:
             return
-        
+
+        self.episode_actions.append(action)
+
         self.current_episode.total_actions += 1
         if not is_valid:
             self.current_episode.invalid_actions += 1
@@ -189,8 +197,12 @@ class MetricsTracker:
         elif event == "KILLED_SELF":
             self.current_episode.self_kills += 1
             self.current_episode.deaths_by_bomb += 1
+            # Mark that this is a self-kill so GOT_KILLED won't double-count
+            self.current_episode.metadata['is_self_kill'] = True
         elif event == "GOT_KILLED":
-            self.current_episode.deaths_by_opponent += 1
+            # Only count as death by opponent if NOT a self-kill
+            if not self.current_episode.metadata.get('is_self_kill', False):
+                self.current_episode.deaths_by_opponent += 1
         elif event == "BOMB_DROPPED":
             self.current_episode.bombs_placed += 1
         elif event == "CRATE_DESTROYED":
@@ -229,17 +241,22 @@ class MetricsTracker:
         
         # Calculate derived metrics
         self._compute_derived_metrics()
-        
+
+        # Copy events and actions to episode
+        self.current_episode.events = self.episode_events.copy()
+        self.current_episode.actions = self.episode_actions.copy()
+
         # Store episode
         self.episodes.append(self.current_episode)
         self.episode_count += 1
-        
+
         # Update running statistics
         self._update_running_stats()
-        
+
         # Clear current episode
         self.current_episode = None
         self.episode_events = []
+        self.episode_actions = []
     
     def _compute_derived_metrics(self):
         """Compute derived metrics from raw data."""
@@ -306,9 +323,24 @@ class MetricsTracker:
         # Combat metrics
         total_kills = sum(ep.opponents_killed for ep in episodes)
         total_self_kills = sum(ep.self_kills for ep in episodes)
+        total_deaths_by_opponent = sum(ep.deaths_by_opponent for ep in episodes)
+        total_deaths_by_bomb = sum(ep.deaths_by_bomb for ep in episodes)
+
+        # Fix double-counting: agents who die by own bomb get BOTH KILLED_SELF and GOT_KILLED
+        # Total deaths = self_kills + deaths_by_opponent (not both, they overlap)
+        # deaths_by_bomb is same as self_kills, deaths_by_opponent is from GOT_KILLED
+        total_deaths = total_self_kills + total_deaths_by_opponent
+
         avg_kills = total_kills / len(episodes)
+        avg_deaths = total_deaths / len(episodes)
         self_kill_rate = total_self_kills / len(episodes)
-        
+
+        # Survival rate: percentage of episodes where agent did NOT die
+        # Agent survived if they didn't self-kill AND didn't get killed by opponent
+        survived_episodes = sum(1 for ep in episodes
+                               if ep.self_kills == 0 and ep.deaths_by_opponent == 0)
+        survival_rate = survived_episodes / len(episodes)
+
         # Bomb metrics
         total_bombs = sum(ep.bombs_placed for ep in episodes)
         effective_bombs = sum(ep.bombs_hit_opponent for ep in episodes)
@@ -344,6 +376,11 @@ class MetricsTracker:
             'total_kills': total_kills,
             'self_kill_rate': self_kill_rate,
             'total_self_kills': total_self_kills,
+            'total_deaths': total_deaths,
+            'total_deaths_by_opponent': total_deaths_by_opponent,
+            'total_deaths_by_bomb': total_deaths_by_bomb,
+            'avg_deaths': avg_deaths,
+            'survival_rate': survival_rate,  # Percentage of episodes survived (0.0 to 1.0)
             
             # Bomb metrics
             'bomb_effectiveness': bomb_effectiveness,

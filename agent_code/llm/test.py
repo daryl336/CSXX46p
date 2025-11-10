@@ -27,7 +27,6 @@ from agent_code.llm.helper import \
     in_bounds, \
     bfs_shortest_path, \
     should_plant_bomb, \
-    check_bomb_radius, \
     check_bomb_radius_and_escape, \
     check_valid_movement
 
@@ -61,6 +60,6 @@ if candidates:
 
 should_plant_bomb(game_state,field,self_info,others)
 
-check_bomb_radius(field, self_info, bombs, explosions)
+# check_bomb_radius(field, self_info, bombs, explosions)
 check_bomb_radius_and_escape(field, self_info, bombs, explosions)
 valid_movements = check_valid_movement(field, self_info)

@@ -28,8 +28,8 @@ def setup(self):
         self.model = {}
         self.epsilon = 1.0  # initial exploration
 
-    # Metrics tracker
-    self.metrics_tracker = MetricsTracker(agent_name=self.name, save_dir="metrics")
+    # Metrics tracker - using separate folder for evaluation
+    self.metrics_tracker = MetricsTracker(agent_name=self.name, save_dir="evaluation_metrics")
     self.episode_counter = 0
     self.episode_active = False
     self.current_step = 0
@@ -602,46 +602,51 @@ import events as e
 
 def reward_from_events(self, events: list) -> float:
     """
-    Balanced reward shaping for both coin-collection AND crate-destruction gameplay.
-    Adapts to whether crates are present in the environment.
+    EVALUATION MODE: Using standardized evaluation rewards for fair comparison.
+
+    This uses the universal reward structure from evaluation_rewards.py
+    to ensure all agents are evaluated with identical reward signals.
     """
-    game_rewards = {
-        # PRIMARY GOALS - High positive rewards
-        e.COIN_COLLECTED: 25.0,           # Main objective
-        e.KILLED_OPPONENT: 100.0,         # Bonus for combat
+    # Import evaluation rewards
+    try:
+        from evaluation_rewards import EVALUATION_REWARDS
+        use_evaluation = True
+    except ImportError:
+        self.logger.warning("evaluation_rewards.py not found, using default rewards")
+        use_evaluation = False
 
-        # COIN SEEKING - Core gameplay without crates
-        "MOVED_TOWARDS_COIN": 3.0,        # Encourage coin seeking
-        "MOVED_AWAY_FROM_COIN": -1.0,     # Penalty for wrong direction
+    if use_evaluation:
+        # Use standardized evaluation rewards
+        reward_sum = 0.0
+        for ev in events:
+            reward_sum += EVALUATION_REWARDS.get(ev, 0.0)
 
-        # SURVIVAL
-        "ESCAPED_DANGER": 10.0,           # Strong reward for survival
-        e.SURVIVED_ROUND: 20.0,           # Big bonus for survival
+        self.logger.debug(f"Evaluation Reward: {reward_sum:.2f} for {events}")
+        return reward_sum
 
-        # BOMB PLACEMENT - Small penalty (discourage spam in no-crate mode)
-        e.BOMB_DROPPED: -0.5,             # Small penalty
+    else:
+        # Fallback to original training rewards
+        game_rewards = {
+            e.COIN_COLLECTED: 25.0,
+            e.KILLED_OPPONENT: 100.0,
+            "MOVED_TOWARDS_COIN": 3.0,
+            "MOVED_AWAY_FROM_COIN": -1.0,
+            "ESCAPED_DANGER": 10.0,
+            e.SURVIVED_ROUND: 20.0,
+            e.BOMB_DROPPED: -0.5,
+            e.KILLED_SELF: -100.0,
+            e.GOT_KILLED: -50.0,
+            e.INVALID_ACTION: -10.0,
+            "MOVED_INTO_DANGER": -20.0,
+            "WAITED_UNNECESSARILY": -2.0,
+            e.WAITED: -1.0,
+            "SAFE_MOVE": 0.3,
+        }
 
-        # CRITICAL PENALTIES - Must avoid
-        e.KILLED_SELF: -100.0,            # Biggest penalty
-        e.GOT_KILLED: -50.0,              # Death is bad
-        e.INVALID_ACTION: -10.0,          # Should not happen with valid action filter
-        "MOVED_INTO_DANGER": -20.0,       # Strong discouragement
+        reward_sum = 0.0
+        for ev in events:
+            reward_sum += game_rewards.get(ev, 0.0)
 
-        # MINOR PENALTIES - Discourage bad habits
-        "WAITED_UNNECESSARILY": -2.0,     # Don't waste time
-        e.WAITED: -1.0,                   # Waiting has cost
-
-        # POSITIVE REINFORCEMENT
-        "SAFE_MOVE": 0.3,                 # Small reward for valid movement
-    }
-
-    reward_sum = 0.0
-    for ev in events:
-        reward_sum += game_rewards.get(ev, 0.0)
-
-    # REMOVED step penalty - was causing negative rewards when searching for objectives
-    # The event-based rewards are sufficient
-
-    reward_sum = float(np.clip(reward_sum, -150, 300))
-    self.logger.debug(f"Reward: {reward_sum:.2f} for {events}")
-    return reward_sum
+        reward_sum = float(np.clip(reward_sum, -150, 300))
+        self.logger.debug(f"Training Reward: {reward_sum:.2f} for {events}")
+        return reward_sum
