@@ -57,7 +57,7 @@ def setup(self):
     self.state_size = 297  # Will be determined by state_to_features
     self.action_size = len(ACTIONS)
     self.hidden_size = 128
-    self.learning_rate = 1e-4
+    self.learning_rate = 1e-5
 
     self.policy = Policy(self.state_size, self.action_size, self.hidden_size).to(device)
     self.optimizer = optim.Adam(self.policy.parameters(), lr = self.learning_rate)

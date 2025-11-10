@@ -3,10 +3,12 @@ import numpy as np
 from typing import List
 import torch
 import torch.optim as optim
-
+import os
+from datetime import datetime
 import events as e
 from .callbacks import state_to_features, device
 from collections import deque
+import json
 
 def setup_training(self):
     """
@@ -140,7 +142,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
         for log_prob, G in zip(self.saved_log_probs, returns):
             policy_loss.append(-log_prob * G)  # -log π(a|s) * G
 
-        policy_loss = torch.stack(policy_loss).sum()
+        policy_loss = torch.stack(policy_loss).mean()
 
         # Step 3: Backpropagate
         self.optimizer.zero_grad()
@@ -148,6 +150,18 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
         self.optimizer.step()
 
         self.logger.info(f'Policy loss: {policy_loss.item():.4f}')
+
+        round_num = last_game_state["round"]
+
+        # Save loss data
+        if policy_loss.item() is not None:
+            save_loss_data(
+                round_num=round_num,
+                loss=policy_loss.item(),
+                reward=total_reward,
+                episode_length=len(self.rewards),
+                log_dir="training_logs"
+            )
 
     # ============================================
     # Logging and cleanup
@@ -327,22 +341,22 @@ def reward_from_events(events: List[str]) -> float:
         e.KILLED_OPPONENT: 50,
         e.KILLED_SELF: -50,
         e.GOT_KILLED: -30,
-        e.INVALID_ACTION: -2,
-        e.WAITED: -2,
+        e.INVALID_ACTION: -0.5,
+        e.WAITED: -0.2,
         e.CRATE_DESTROYED: 2,
-        e.SURVIVED_ROUND: 0.1,
+        e.SURVIVED_ROUND: 1,
 
         # Official game events (medium impact)
         e.CRATE_DESTROYED: 3.0,
         e.BOMB_DROPPED: 0.0,  # Neutral, context matters
 
         # Custom events (movement)
-        # 'MOVED_TOWARDS_COIN': 0.01,
-        # 'MOVED_AWAY_FROM_COIN': -0.01,
+        'MOVED_TOWARDS_COIN': 0.01,
+        'MOVED_AWAY_FROM_COIN': -0.01,
 
         # Custom events (danger management)
         'ESCAPED_DANGER': 5.0,
-        'MOVED_INTO_DANGER': -8.0,
+        'MOVED_INTO_DANGER': -3.0,
 
         # Custom events (strategic bombing)
         'BOMB_NEAR_CRATE': 2.0,
@@ -355,3 +369,36 @@ def reward_from_events(events: List[str]) -> float:
             reward_sum += game_rewards[event]
 
     return reward_sum
+
+
+def save_loss_data(round_num, loss, reward, episode_length, log_dir="training_logs"):
+    """
+    Save loss and metrics data to JSON file.
+
+    Args:
+        round_num: Current round/episode number
+        loss: Policy loss value
+        reward: Total episode reward
+        episode_length: Number of steps in episode
+        log_dir: Directory to save logs
+    """
+    os.makedirs(log_dir, exist_ok=True)
+
+    # Create filename with timestamp (one file per training session)
+    if not hasattr(save_loss_data, 'filename'):
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        save_loss_data.filename = os.path.join(log_dir, f"training_losses_{timestamp}.json")
+        save_loss_data.data = []
+
+    # Append new data point
+    data_point = {
+        "round": round_num,
+        "loss": float(loss),
+        "reward": float(reward),
+        "episode_length": int(episode_length)
+    }
+    save_loss_data.data.append(data_point)
+
+    # Save to file (overwrite with all data)
+    with open(save_loss_data.filename, 'w') as f:
+        json.dump(save_loss_data.data, f, indent=2)
