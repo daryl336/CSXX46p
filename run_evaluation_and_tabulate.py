@@ -150,6 +150,11 @@ def load_metrics(agent_name, metrics_dir="evaluation_metrics"):
             name_patterns.append(f"{location}/LLM Maverick*.pkl")
             name_patterns.append(f"{location}/*LLM Maverick*.pkl")
 
+        # Special case: llm_maverick_v4 saves as "LLM Maverick" (same as llm_maverick)
+        if agent_name == 'llm_maverick_v4':
+            name_patterns.append(f"{location}/LLM Maverick*.pkl")
+            name_patterns.append(f"{location}/*LLM Maverick*.pkl")
+
         # Special case: maverick_enhanced saves as "Maverick Enhanced"
         if agent_name == 'maverick_enhanced':
             name_patterns.append(f"{location}/Maverick Enhanced*.pkl")
@@ -164,9 +169,21 @@ def load_metrics(agent_name, metrics_dir="evaluation_metrics"):
         print(f"Patterns: {name_patterns}")
         return None
 
-    # Get the most recent file
-    latest_file = max(all_matching_files, key=lambda f: Path(f).stat().st_mtime)
-    print(f"Loading metrics from: {latest_file}")
+    # Get the file with the highest episode number (cumulative stats)
+    # Files are named like "Agent Name_10.pkl" where 10 is the episode count
+    import re
+
+    def get_episode_number(filepath):
+        """Extract episode number from filename like 'Agent_10.pkl'"""
+        match = re.search(r'_(\d+)\.pkl$', str(filepath))
+        if match:
+            return int(match.group(1))
+        return 0  # Fallback to 0 if no number found
+
+    # Sort by episode number (descending) to get the file with most episodes
+    latest_file = max(all_matching_files, key=get_episode_number)
+    episode_count = get_episode_number(latest_file)
+    print(f"Loading metrics from: {latest_file} ({episode_count} episodes)")
 
     try:
         with open(latest_file, 'rb') as f:

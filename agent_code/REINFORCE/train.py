@@ -10,6 +10,48 @@ from .callbacks import state_to_features, device
 from collections import deque
 import json
 
+# ===================================================================
+# EVALUATION MODE: Using standardized evaluation rewards
+# ===================================================================
+try:
+    from evaluation_rewards import EVALUATION_REWARDS
+    GAME_REWARDS = EVALUATION_REWARDS
+    print("✅ REINFORCE using standardized EVALUATION_REWARDS")
+except ImportError:
+    print("⚠️  evaluation_rewards.py not found, using default REINFORCE rewards")
+    GAME_REWARDS = {
+        e.COIN_COLLECTED: 20,
+        e.KILLED_OPPONENT: 50,
+        e.KILLED_SELF: -50,
+        e.GOT_KILLED: -30,
+        e.INVALID_ACTION: -0.5,
+        e.WAITED: -0.2,
+        e.CRATE_DESTROYED: 3.0,
+        e.SURVIVED_ROUND: 1,
+        e.BOMB_DROPPED: 0.0,
+        'MOVED_TOWARDS_COIN': 0.01,
+        'MOVED_AWAY_FROM_COIN': -0.01,
+        'ESCAPED_DANGER': 5.0,
+        'MOVED_INTO_DANGER': -3.0,
+        'BOMB_NEAR_CRATE': 2.0,
+        'BOMB_MULTI_CRATE': 3.0,
+    }
+
+# ===================================================================
+# EVALUATION MODE: Disable all shaped rewards for fair comparison
+# ===================================================================
+# When CUSTOM_REWARD_SHAPING = False (default for evaluation):
+#   - Only uses standardized EVALUATION_REWARDS
+#   - No custom events (MOVED_TOWARDS_COIN, ESCAPED_DANGER, etc.)
+#   - Fair comparison with other agents
+#
+# When CUSTOM_REWARD_SHAPING = True (for training with dense rewards):
+#   - Uses custom shaped rewards in addition to game rewards
+#   - Adds custom events for better learning signal
+#   - May improve training speed but affects evaluation fairness
+# ===================================================================
+CUSTOM_REWARD_SHAPING = False  # Set to True to enable custom shaped rewards
+
 def setup_training(self):
     """
     Initialize training-specific variables for REINFORCE.
@@ -72,14 +114,18 @@ def game_events_occurred(self, old_game_state: dict, self_action: str,
             
             self.logger.debug(f"Started episode {self.episode_counter} with opponents: {opponent_names}")
 
-    # Add custom events based on state changes
-    events = add_custom_events(old_game_state, new_game_state, events)
+    # Add custom events based on state changes (only if custom reward shaping is enabled)
+    if CUSTOM_REWARD_SHAPING:
+        events = add_custom_events(old_game_state, new_game_state, events)
+
     for event in events:
         event_name = event if isinstance(event, str) else getattr(event, 'name', str(event))
-        self.metrics_tracker.record_event(event_name)
-        self.logger.debug(f"Recorded event: {event_name}")
+        # Get reward for this specific event
+        event_reward = GAME_REWARDS.get(event_name, 0)
+        self.metrics_tracker.record_event(event_name, reward=event_reward)
+        self.logger.debug(f"Recorded event: {event_name} with reward {event_reward}")
 
-    # Calculate reward
+    # Calculate reward using standardized rewards
     reward = reward_from_events(events)
 
     # Store the log_prob (set in callbacks.act()) and reward
@@ -105,6 +151,13 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
     :param events: Final events
     """
     self.logger.debug(f'Final events: {", ".join(events)}')
+
+    # Record final events to metrics tracker
+    if hasattr(self, 'metrics_tracker') and self.metrics_tracker.current_episode:
+        for event in events:
+            event_name = event if isinstance(event, str) else getattr(event, 'name', str(event))
+            event_reward = GAME_REWARDS.get(event_name, 0)
+            self.metrics_tracker.record_event(event_name, reward=event_reward)
 
     # Get final reward
     final_reward = reward_from_events(events)
@@ -331,42 +384,17 @@ def count_crates_nearby(x, y, field):
 
 def reward_from_events(events: List[str]) -> float:
     """
-    Simple reward function.
+    Calculate reward from events using standardized GAME_REWARDS.
 
     :param events: List of game events
     :return: Total reward
     """
-    game_rewards = {
-        e.COIN_COLLECTED: 20,
-        e.KILLED_OPPONENT: 50,
-        e.KILLED_SELF: -50,
-        e.GOT_KILLED: -30,
-        e.INVALID_ACTION: -0.5,
-        e.WAITED: -0.2,
-        e.CRATE_DESTROYED: 2,
-        e.SURVIVED_ROUND: 1,
-
-        # Official game events (medium impact)
-        e.CRATE_DESTROYED: 3.0,
-        e.BOMB_DROPPED: 0.0,  # Neutral, context matters
-
-        # Custom events (movement)
-        'MOVED_TOWARDS_COIN': 0.01,
-        'MOVED_AWAY_FROM_COIN': -0.01,
-
-        # Custom events (danger management)
-        'ESCAPED_DANGER': 5.0,
-        'MOVED_INTO_DANGER': -3.0,
-
-        # Custom events (strategic bombing)
-        'BOMB_NEAR_CRATE': 2.0,
-        'BOMB_MULTI_CRATE': 3.0,
-    }
-
     reward_sum = 0
     for event in events:
-        if event in game_rewards:
-            reward_sum += game_rewards[event]
+        # Handle both event objects and strings
+        event_name = event if isinstance(event, str) else getattr(event, 'name', str(event))
+        if event_name in GAME_REWARDS:
+            reward_sum += GAME_REWARDS[event_name]
 
     return reward_sum
 

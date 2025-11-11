@@ -14,7 +14,7 @@ from torch.distributions import Categorical
 ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
 
 # Device configuration
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("mps")
 
 class Policy(nn.Module):
     def __init__(self, s_size, a_size, h_size):

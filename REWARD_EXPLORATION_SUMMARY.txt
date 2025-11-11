@@ -1,0 +1,297 @@
+================================================================================
+REWARD STRUCTURES EXPLORATION - COMPLETE SUMMARY
+================================================================================
+
+Generated: November 9, 2024
+Scope: 5 primary RL agents in Bomberman competition
+Location: /Users/daryltay/NUS Masters/CS5446 AI Planning/CSXX46p/
+
+================================================================================
+ANALYSIS DOCUMENTS CREATED
+================================================================================
+
+1. REWARD_STRUCTURES_ANALYSIS.md (17 KB)
+   - Comprehensive analysis of all 5 agents
+   - Detailed reward mappings for each agent
+   - Custom event examples and shaping strategies
+   - Comparative analysis and design patterns
+   - Implementation recommendations
+
+2. REWARD_IMPLEMENTATION_MAP.md (7.2 KB)
+   - Quick reference guide with file locations
+   - Line numbers for easy navigation
+   - Feature representation breakdown
+   - Reward modification checklist
+   - Related files index
+
+================================================================================
+KEY FINDINGS SUMMARY
+================================================================================
+
+AGENT 1: Q-LEARNING
+====================
+Location: /agent_code/q_learning/
+Reward Scale: [-100, 100+]
+Strategy: Very dense reward guidance
+Target: Coin collection with strong survival emphasis
+Key Features:
+  - 6-dimensional state space (movement safety, danger, coins, escapes, bombs, crates)
+  - Custom events for direction feedback (towards/away from coins)
+  - Adaptive learning rate (0.1 → 0.05 over 5000 episodes)
+  - Heavy penalty for death (-100 for suicide, -50 for killed)
+  - Survival rewards (ESCAPED_DANGER=10, SURVIVED_ROUND=20)
+
+Main Files:
+  - Rewards: /agent_code/q_learning/callbacks.py (lines 603-646)
+  - Training: /agent_code/q_learning/train.py (lines 63-256)
+  - Features: /agent_code/q_learning/callbacks.py (lines 168-250)
+
+
+AGENT 2: PPO
+============
+Location: /agent_code/ppo/
+Reward Scale: [-1, 1] (Normalized)
+Strategy: Balanced with explicit reward shaping
+Target: General gameplay with balanced objectives
+Key Features:
+  - 9 spatial planes + 9 global features (18 inputs total)
+  - Sophisticated danger mapping and action masking
+  - Explicit exploration bonus (0.006 per new tile)
+  - Safe bombing reward (0.4 for successful bomb with damage)
+  - Escape bonus (0.3 for danger escape)
+  - 1024 batch size for stable training
+
+Main Files:
+  - Network: /agent_code/ppo/callbacks.py (lines 390-718)
+  - Rewards: /agent_code/ppo/train.py (lines 25-57)
+  - Training: /agent_code/ppo/train.py (lines 175-466)
+
+
+AGENT 3: DQN FINAL
+==================
+Location: /agent_code/dqn_final/
+Reward Scale: [-15, 12]
+Strategy: Minimal base + heavy policy shaping
+Target: Safe bomb placement with sophisticated safety analysis
+Key Features:
+  - 9-channel feature representation (walls, crates, coins, distances, danger)
+  - Time-to-blast grid computation for safety
+  - Escape route analysis with BFS
+  - Emergency evacuation logic for trapped agents
+  - Policy shaping parameters:
+    * WAIT_DISCOURAGE: 0.25
+    * REVERSE_DISCOURAGE: 0.15
+    * BOMB_CRATE_BONUS: 0.20
+    * BOMB_COOLDOWN: 10 steps
+    * SHAPE_IMMINENT_PEN: 0.80
+    * SHAPE_TTB_IMPROVE: 0.03
+
+Main Files:
+  - All implementation: /agent_code/dqn_final/callbacks.py
+  - Rewards: lines 577-585
+  - Policy shaping: lines 33-53
+  - Safety helpers: lines 177-452
+
+
+AGENT 4: MAVERICK
+=================
+Location: /agent_code/maverick/
+Reward Scale: [-1000, 500]
+Strategy: Direct event mapping + immediate crate feedback
+Target: Aggressive combat with bomb efficiency
+Key Features:
+  - Heavy suicide penalty (-1000, 10x Q-learning)
+  - Combat emphasis (KILLED_OPPONENT=500)
+  - Immediate crate rewards (destroyed_crates * 33 upon bomb drop)
+  - Rule-based fallback during exploration
+  - Higher discount factor (0.95 vs 0.99 in others)
+  - Movement efficiency cost (-1 per step)
+
+Main Files:
+  - Callbacks: /agent_code/maverick/callbacks.py (lines 50-92)
+  - Rewards: /agent_code/maverick/ManagerRewards.py (lines 1-56)
+  - Training: /agent_code/maverick/train.py (lines 29-130)
+
+
+AGENT 5: LLM
+============
+Location: /agent_code/llm/
+Reward Scale: Implicit (LLM-driven)
+Strategy: Language model decision making
+Target: Multi-objective (coins, bombs, survival, combat)
+Key Features:
+  - No explicit reward shaping (relies on LLM training)
+  - External HTTP endpoint for decision making
+  - Pickles game states for analysis
+  - Logs reasoning from LLM
+
+Main Files:
+  - Implementation: /agent_code/llm/callbacks.py (lines 1-78)
+
+
+================================================================================
+GAME MECHANICS REFERENCE
+================================================================================
+
+Board Configuration:
+  - Size: 17x17 grid
+  - Crate Density: 0.75 (75% of non-wall tiles)
+  - Max Agents: 4
+  - Max Steps per Round: 400
+
+Bomb Mechanics:
+  - Timer: 4 steps before explosion
+  - Blast Radius: 3 tiles in each cardinal direction
+  - Walls block blast propagation
+  - Crates block further propagation
+
+Available Events (from /events.py):
+  Movement: MOVED_LEFT, MOVED_RIGHT, MOVED_UP, MOVED_DOWN, WAITED
+  Bombs: BOMB_DROPPED, BOMB_EXPLODED
+  Objects: CRATE_DESTROYED, COIN_FOUND, COIN_COLLECTED
+  Combat: KILLED_OPPONENT, KILLED_SELF, GOT_KILLED, OPPONENT_ELIMINATED
+  Status: SURVIVED_ROUND, INVALID_ACTION
+
+
+================================================================================
+REWARD DESIGN PATTERNS DISCOVERED
+================================================================================
+
+1. DEATH PENALTIES ARE CRITICAL
+   - Range from -50 (Q-learning) to -1000 (Maverick)
+   - Must prevent "death spirals" where agent gives up
+   - Maverick uses 10x more aggressive penalty
+
+2. DENSITY VS SPARSITY TRADEOFF
+   - Q-Learning: Very dense (directional feedback every step)
+   - PPO: Moderate (game events + shaped bonuses)
+   - DQN Final: Sparse base (only real events), dense shaping
+   - Maverick: Direct (only real events)
+
+3. SAFETY SOPHISTICATION INCREASES WITH AGENT COMPLEXITY
+   - Q-Learning: Simple danger levels (none/low/high/critical)
+   - PPO: Pre-computed danger maps for all positions
+   - DQN Final: Time-to-blast grids, escape route BFS, shelter detection
+   - Maverick: Heavy penalties only
+
+4. NORMALIZATION MATTERS
+   - PPO explicitly scales to [-1, 1] for numerical stability
+   - Others use raw scales (varying widely)
+   - Normalization improves training convergence
+
+5. EXPLORATION STRATEGIES DIFFER
+   - Q-Learning: Pure epsilon-greedy
+   - PPO: Entropy regularization + explicit exploration bonus
+   - DQN Final: Epsilon-greedy with policy shaping
+   - Maverick: Epsilon-greedy + rule-based fallback
+
+6. BOMB STRATEGY ALIGNMENT
+   - Q-Learning: Discourages (-0.5, no crates in training)
+   - PPO: Safe bombing reward (0.4 for damage without death)
+   - DQN Final: Heavy policy shaping (20+ parameters)
+   - Maverick: Immediate feedback (crate_count * 33)
+
+7. CUSTOM EVENT GENERATION
+   - Q-Learning: 6 custom events (direction, danger, safety)
+   - PPO: 5+ shaped rewards (computed dynamically)
+   - DQN Final: 4 shaping components (safety, blast, shelter, TTB)
+   - Maverick: 1 custom (immediate crate prediction)
+
+
+================================================================================
+FEATURE REPRESENTATION COMPLEXITY
+================================================================================
+
+Minimal (Q-Learning):
+  - 6 scalar features
+  - Entirely symbolic (safe/risky/blocked, none/low/high/critical)
+  - Fast computation, limited information
+
+Moderate (DQN Final):
+  - 9 channels (17x17 each)
+  - Spatial + 1D information (coin distances)
+  - Standard CNN processing
+
+Advanced (PPO):
+  - 9 spatial planes + 9 global features
+  - Multiple normalized maps
+  - Danger pre-computation
+  - Safety distance analysis
+  - Sophisticated state representation
+
+
+================================================================================
+MODIFICATION GUIDELINES
+================================================================================
+
+For COIN COLLECTION focus:
+  Use Q-Learning approach
+  - Dense coin-seeking rewards
+  - Modest survival penalties
+  - Movement efficiency cost
+
+For BALANCED GAMEPLAY:
+  Use PPO approach
+  - Normalized rewards
+  - Danger escaping bonus
+  - Exploration encouragement
+
+For BOMB-HEAVY STRATEGIES:
+  Use DQN Final approach
+  - Sophisticated safety analysis
+  - Time-aware predictions
+  - Immediate crate feedback
+
+For AGGRESSIVE COMPETITION:
+  Use Maverick approach
+  - Heavy death penalties
+  - Immediate crate rewards
+  - Combat emphasis
+
+
+================================================================================
+FILE LOCATIONS - QUICK REFERENCE
+================================================================================
+
+Core Events: /events.py (21 lines)
+Game Settings: /settings.py (47 lines)
+
+Q-Learning:
+  - /agent_code/q_learning/callbacks.py (647 lines)
+  - /agent_code/q_learning/train.py (297 lines)
+
+PPO:
+  - /agent_code/ppo/callbacks.py (1000+ lines)
+  - /agent_code/ppo/train.py (466 lines)
+
+DQN Final:
+  - /agent_code/dqn_final/callbacks.py (783 lines)
+
+Maverick:
+  - /agent_code/maverick/callbacks.py (92 lines)
+  - /agent_code/maverick/train.py (142 lines)
+  - /agent_code/maverick/ManagerRewards.py (56 lines)
+
+LLM:
+  - /agent_code/llm/callbacks.py (78 lines)
+
+
+================================================================================
+NEXT STEPS FOR YOUR PROJECT
+================================================================================
+
+1. Read REWARD_STRUCTURES_ANALYSIS.md for comprehensive understanding
+2. Use REWARD_IMPLEMENTATION_MAP.md as quick reference guide
+3. Choose agent architecture matching your goals
+4. Study custom event generation patterns
+5. Understand feature representation tradeoffs
+6. Test reward modifications on small datasets first
+
+
+================================================================================
+END OF SUMMARY
+================================================================================
+
+All documentation has been saved to the repository root directory.
+Files are cross-referenced and ready for your analysis.
+

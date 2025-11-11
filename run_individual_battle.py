@@ -257,7 +257,7 @@ def main():
         print("\n" + "=" * 80)
 
         # Save results to JSON
-        results_file = "llm_variant_battle.json"
+        results_file = "ppo_th_battle.json"
         with open(results_file, 'w') as f:
             json.dump({
                 'mode': 'individual',

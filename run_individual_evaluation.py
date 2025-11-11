@@ -257,7 +257,7 @@ def main():
         print("\n" + "=" * 80)
 
         # Save results to JSON
-        results_file = "llm_maverick_v3_coins.json"
+        results_file = "llm_maverick_v4_coins.json"
         with open(results_file, 'w') as f:
             json.dump({
                 'mode': 'individual',

@@ -56,6 +56,18 @@ def should_trigger_llm(self, game_state, Q_values, top_3_actions, bomb_radius_da
         self.position_history.append(current_pos)
 
     # ============================================================
+    # PRIMARY TRIGGER 0: Imminent Danger (DISABLED)
+    # ============================================================
+    # DISABLED: Testing shows this trigger decreased survival (136→73 steps)
+    # Root cause: Either LLM making bad escape decisions OR Maverick already
+    # handles danger well from training. Need to investigate LLM prompt/logic.
+    #
+    # is_in_danger, danger_reason = detect_imminent_danger(bomb_radius_data)
+    # if is_in_danger:
+    #     self.llm_call_count += 1
+    #     return True, f"⚠️ DANGER: {danger_reason}"
+
+    # ============================================================
     # PRIMARY TRIGGER 1: Behavioral Loops (Stuck/Shivering)
     # ============================================================
     is_shivering, shiver_reason = detect_shivering(self.action_history)
@@ -79,7 +91,7 @@ def should_trigger_llm(self, game_state, Q_values, top_3_actions, bomb_radius_da
     # ============================================================
     # PRIMARY TRIGGER 3: Bomb Planting Decision
     # ============================================================
-    wants_bomb, bomb_reason = detect_bomb_intent(top_3_actions, plant_bomb_data)
+    wants_bomb, bomb_reason = detect_bomb_intent(top_3_actions, plant_bomb_data, game_state)
     if wants_bomb:
         self.llm_call_count += 1
         return True, f"💣 Bomb decision: {bomb_reason}"
@@ -136,6 +148,44 @@ def detect_stationary(position_history):
         unique_positions = set(last_5)
         if len(unique_positions) <= 2:
             return True, f"Looping in small area: {unique_positions}"
+
+    return False, None
+
+
+def detect_imminent_danger(bomb_radius_data):
+    """
+    Detects if agent is in immediate life-threatening danger.
+
+    This is the HIGHEST PRIORITY trigger - survival trumps all other objectives.
+    LLM should be consulted when agent needs to escape bombs, even if Maverick
+    is confident about a different action.
+
+    Args:
+        bomb_radius_data: Dict from check_bomb_radius_and_escape helper
+            Expected format: {
+                'in_danger': 'yes'/'no',
+                'escape_bomb_action': 'UP'/'DOWN'/'LEFT'/'RIGHT'/'WAIT'/'none'
+            }
+
+    Returns: (is_in_danger, reason)
+    """
+    if not bomb_radius_data:
+        return False, None
+
+    in_danger = bomb_radius_data.get('in_danger') == 'yes'
+    escape_action = bomb_radius_data.get('escape_bomb_action', 'none')
+
+    # CRITICAL: Agent is in bomb blast radius
+    if in_danger:
+        if escape_action and escape_action != 'none' and escape_action != 'WAIT':
+            # There's a clear escape route
+            return True, f"In blast radius, must escape: {escape_action}"
+        elif escape_action == 'none':
+            # Trapped with no obvious escape - LLM needs to find creative solution
+            return True, "Trapped in blast radius, no clear escape route"
+        else:
+            # In danger but helper says WAIT (might be safest option?)
+            return True, "In blast radius, need to evaluate safety"
 
     return False, None
 
@@ -203,7 +253,7 @@ def detect_contradiction(best_action, bomb_radius_data, current_pos, game_state)
     return False, None
 
 
-def detect_bomb_intent(top_3_actions, plant_bomb_data):
+def detect_bomb_intent(top_3_actions, plant_bomb_data, game_state=None):
     """
     Detects if Maverick wants to plant a bomb.
 
@@ -211,6 +261,11 @@ def detect_bomb_intent(top_3_actions, plant_bomb_data):
     - Risk vs reward (crates/opponents vs safety)
     - Escape route planning
     - Timing with respect to opponents
+
+    Args:
+        top_3_actions: Top 3 Maverick recommendations
+        plant_bomb_data: Strategic bomb evaluation from helper
+        game_state: (Optional) Current game state to check bomb availability
 
     Returns: (wants_bomb, reason)
     """
@@ -222,6 +277,16 @@ def detect_bomb_intent(top_3_actions, plant_bomb_data):
 
     # CRITERION 1: BOMB is the top choice
     if top_3_actions[0]['action'] == 'BOMB':
+        # FIRST: Check if agent even has a bomb available
+        if game_state:
+            self_info = game_state.get('self', [None, None, False])
+            has_bomb = self_info[2] if len(self_info) >= 3 else False
+
+            if not has_bomb:
+                # No bomb available → Don't waste LLM call
+                return False, None
+
+        # Agent has bomb OR we don't know → Continue evaluation
         # Check if it's a strategic opportunity (from plant_bomb_data)
         if plant_bomb_data and plant_bomb_data.get('plant') == 'true':
             current_status = plant_bomb_data.get('current_status', {})

@@ -135,6 +135,7 @@ def _latest_model_path():
 def setup(self):
     _ensure_dirs()
     model_path = _latest_model_path()
+    print(model_path)
     q = ConvQNet(in_ch=9, n_actions=len(ACTIONS)).to(DEVICE)
     self.q_infer = q
 

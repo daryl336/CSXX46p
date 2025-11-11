@@ -17,5 +17,4 @@ plots
 *.pkl
 *.json
 *.md
-*.pt
 game_score*
