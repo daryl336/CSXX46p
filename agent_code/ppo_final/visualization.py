@@ -31,6 +31,7 @@ class TrainingVisualizer:
         self.returns = []
         self.bomb_usage_rates = []
         self.survival_rates = []
+        self.opponent_survival_rates = []
         self.death_rates = []
         self.entropy_values = []
         self.learning_rates = []
@@ -46,8 +47,8 @@ class TrainingVisualizer:
             self.load_csv()
 
     def record_round(self, round_num, score=0, episode_return=0, bomb_usage=0.0,
-                    survival_rate=0.0, death_rate=0.0, entropy=0.0, lr=0.0,
-                    actor_loss=0.0, critic_loss=0.0, per_agent_metrics=None):
+                    survival_rate=0.0, opponent_survival_rate=0.0, death_rate=0.0,
+                    entropy=0.0, lr=0.0, actor_loss=0.0, critic_loss=0.0, per_agent_metrics=None):
         """
         Record metrics for a single round.
 
@@ -56,7 +57,8 @@ class TrainingVisualizer:
             score: True game score (coins + kills) - collective average
             episode_return: Total return from RL agent - collective average
             bomb_usage: Bomb usage rate (0-1)
-            survival_rate: Survival rate after bombing (0-1)
+            survival_rate: Survival rate after bombing own bombs (0-1)
+            opponent_survival_rate: Rate of escaping opponent bombs
             death_rate: Self-destruction rate (0-1)
             entropy: Current entropy coefficient
             lr: Current learning rate
@@ -69,6 +71,7 @@ class TrainingVisualizer:
         self.returns.append(episode_return)
         self.bomb_usage_rates.append(bomb_usage)
         self.survival_rates.append(survival_rate)
+        self.opponent_survival_rates.append(opponent_survival_rate)
         self.death_rates.append(death_rate)
         self.entropy_values.append(entropy)
         self.learning_rates.append(lr)
@@ -109,6 +112,7 @@ class TrainingVisualizer:
                 self.returns[-1],
                 self.bomb_usage_rates[-1],
                 self.survival_rates[-1],
+                self.opponent_survival_rates[-1] if len(self.opponent_survival_rates) > 0 else 0.0,
                 self.death_rates[-1],
                 self.entropy_values[-1],
                 self.learning_rates[-1],
@@ -124,7 +128,7 @@ class TrainingVisualizer:
             with open(csv_path, 'a') as f:
                 if not file_exists:
                     # Write header if file doesn't exist
-                    header = "round,score,return,bomb_usage,survival_rate,death_rate,entropy,learning_rate,actor_loss,critic_loss"
+                    header = "round,score,return,bomb_usage,survival_rate,opponent_survival_rate,death_rate,entropy,learning_rate,actor_loss,critic_loss"
                     for agent_id in agent_ids:
                         # Shorten agent IDs for readability
                         short_id = f"agent{agent_ids.index(agent_id)}"
@@ -132,12 +136,12 @@ class TrainingVisualizer:
                     f.write(header + "\n")
 
                 # Write data row
-                format_str = "%d,%.2f,%.2f,%.4f,%.4f,%.4f,%.6f,%.6f,%.4f,%.4f"
+                format_str = "%d,%.2f,%.2f,%.4f,%.4f,%.4f,%.4f,%.6f,%.6f,%.4f,%.4f"
                 format_str += ",%.2f,%.2f" * len(agent_ids)
                 f.write(format_str % tuple(last_row) + "\n")
         else:
             # Save all metrics (overwrite mode)
-            header = "round,score,return,bomb_usage,survival_rate,death_rate,entropy,learning_rate,actor_loss,critic_loss"
+            header = "round,score,return,bomb_usage,survival_rate,opponent_survival_rate,death_rate,entropy,learning_rate,actor_loss,critic_loss"
 
             # Create data array with base metrics
             data_columns = [
@@ -146,6 +150,7 @@ class TrainingVisualizer:
                 self.returns,
                 self.bomb_usage_rates,
                 self.survival_rates,
+                self.opponent_survival_rates if len(self.opponent_survival_rates) > 0 else [0.0] * len(self.rounds),
                 self.death_rates,
                 self.entropy_values,
                 self.learning_rates,
@@ -154,7 +159,7 @@ class TrainingVisualizer:
             ]
 
             # Add per-agent columns
-            format_parts = ['%d', '%.2f', '%.2f', '%.4f', '%.4f', '%.4f', '%.6f', '%.6f', '%.4f', '%.4f']
+            format_parts = ['%d', '%.2f', '%.2f', '%.4f', '%.4f', '%.4f', '%.4f', '%.6f', '%.6f', '%.4f', '%.4f']
             for agent_id in agent_ids:
                 short_id = f"agent{agent_ids.index(agent_id)}"
                 header += f",{short_id}_score,{short_id}_return"
@@ -199,11 +204,23 @@ class TrainingVisualizer:
             self.returns = data[:, 2].tolist()
             self.bomb_usage_rates = data[:, 3].tolist()
             self.survival_rates = data[:, 4].tolist()
-            self.death_rates = data[:, 5].tolist()
-            self.entropy_values = data[:, 6].tolist()
-            self.learning_rates = data[:, 7].tolist()
-            self.actor_losses = data[:, 8].tolist()
-            self.critic_losses = data[:, 9].tolist()
+
+            # Check if CSV has opponent_survival_rate column (newer format)
+            if data.shape[1] >= 11:
+                self.opponent_survival_rates = data[:, 5].tolist()
+                self.death_rates = data[:, 6].tolist()
+                self.entropy_values = data[:, 7].tolist()
+                self.learning_rates = data[:, 8].tolist()
+                self.actor_losses = data[:, 9].tolist()
+                self.critic_losses = data[:, 10].tolist()
+            else:
+                # Old format without opponent_survival_rate
+                self.opponent_survival_rates = [0.0] * len(self.rounds)
+                self.death_rates = data[:, 5].tolist()
+                self.entropy_values = data[:, 6].tolist()
+                self.learning_rates = data[:, 7].tolist()
+                self.actor_losses = data[:, 8].tolist()
+                self.critic_losses = data[:, 9].tolist()
 
             return True
 
@@ -250,13 +267,17 @@ class TrainingVisualizer:
         ax = axes[1, 1]
         if smooth:
             survival_smooth = uniform_filter1d(self.survival_rates, window_size, mode="nearest")
+            opponent_survival_smooth = uniform_filter1d(self.opponent_survival_rates, window_size, mode="nearest")
             death_smooth = uniform_filter1d(self.death_rates, window_size, mode="nearest")
         else:
             survival_smooth = self.survival_rates
+            opponent_survival_smooth = self.opponent_survival_rates
             death_smooth = self.death_rates
 
         ax.plot(self.rounds, [r * 100 for r in survival_smooth],
-               label='Survival Rate', color='green', linewidth=2, alpha=0.8)
+               label='Own Bomb Survival', color='green', linewidth=2, alpha=0.8)
+        ax.plot(self.rounds, [r * 100 for r in opponent_survival_smooth],
+               label='Opponent Bomb Escapes', color='cyan', linewidth=2, alpha=0.8)
         ax.plot(self.rounds, [r * 100 for r in death_smooth],
                label='Death Rate', color='red', linewidth=2, alpha=0.8)
         ax.set_title('Bomb Outcomes', fontsize=16, fontweight='bold')
@@ -391,7 +412,8 @@ class TrainingVisualizer:
         summary.append(f"  Avg Score: {np.mean(self.scores[-recent_window:]):.2f}")
         summary.append(f"  Avg Return: {np.mean(self.returns[-recent_window:]):.2f}")
         summary.append(f"  Bomb Usage: {np.mean(self.bomb_usage_rates[-recent_window:]) * 100:.1f}%")
-        summary.append(f"  Survival Rate: {np.mean(self.survival_rates[-recent_window:]) * 100:.1f}%")
+        summary.append(f"  Own Bomb Survival: {np.mean(self.survival_rates[-recent_window:]) * 100:.1f}%")
+        summary.append(f"  Opponent Bomb Escapes: {np.mean(self.opponent_survival_rates[-recent_window:]):.2f} per round")
         summary.append(f"  Death Rate: {np.mean(self.death_rates[-recent_window:]) * 100:.1f}%")
         summary.append("")
 

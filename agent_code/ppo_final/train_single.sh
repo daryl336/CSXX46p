@@ -6,7 +6,7 @@
 set -e
 
 # Configuration
-ROUNDS=${1:-5000}
+ROUNDS=${1:-1000}
 NO_GUI=${2:---no-gui}
 
 # Colors for output
@@ -34,19 +34,12 @@ if [ -d "venv" ]; then
     source venv/bin/activate
 fi
 
-# Create backup of current model (if exists)
-if [ -f "agent_code/ppo/models/ppo_agent.pth" ]; then
-    echo -e "${YELLOW}Current model exists${NC}"
-    echo "  Location: agent_code/ppo/models/ppo_agent.pth"
-    echo ""
-fi
-
 # Start training
 echo -e "${GREEN}Starting single-agent training...${NC}"
 echo ""
 
 python -m main play \
-    --agents ppo rule_based_agent rule_based_agent rule_based_agent \
+    --agents ppo_final rule_based_agent rule_based_agent rule_based_agent \
     --train 1 \
     --n-rounds "$ROUNDS" \
     $NO_GUI
@@ -57,7 +50,7 @@ echo -e "${GREEN}  Training Complete!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
 echo "Check the following for results:"
-echo "  - Model: agent_code/ppo/models/ppo_agent.pth"
-echo "  - Logs: agent_code/ppo/logs/"
-echo "  - Plots: agent_code/ppo/logs/training_progress.png"
+echo "  - Model: agent_code/ppo_final/models/ppo_agent.pth"
+echo "  - Logs: agent_code/ppo_final/logs/"
+echo "  - Plots: agent_code/ppo_final/logs/training_progress.png"
 echo ""

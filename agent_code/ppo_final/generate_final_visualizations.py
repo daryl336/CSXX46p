@@ -19,7 +19,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    from ppo.visualization import TrainingVisualizer
+    from ppo_final.visualization import TrainingVisualizer
 except ImportError:
     from visualization import TrainingVisualizer
 
@@ -47,18 +47,18 @@ def generate_visualizations(log_dir="logs"):
     print("\nGenerating comprehensive training progress plot...")
     try:
         plot_path = visualizer.plot_training_progress(smooth=True)
-        print(f"✓ Saved: {plot_path}")
+        print(f"Saved: {plot_path}")
     except Exception as e:
-        print(f"✗ Failed to generate training progress plot: {e}")
+        print(f"Failed to generate training progress plot: {e}")
 
     # Generate summary report
     print("\nGenerating summary report...")
     try:
         summary = visualizer.generate_summary_report()
-        print(f"✓ Summary saved to {os.path.join(log_dir, 'training_summary.txt')}")
+        print(f"Summary saved to {os.path.join(log_dir, 'training_summary.txt')}")
         print("\n" + summary)
     except Exception as e:
-        print(f"✗ Failed to generate summary: {e}")
+        print(f"Failed to generate summary: {e}")
 
     return True
 
@@ -80,12 +80,12 @@ def main():
 
     if success:
         print("\n" + "=" * 70)
-        print("✓ Visualization generation complete!")
+        print("Visualization generation complete!")
         print("=" * 70)
         return 0
     else:
         print("\n" + "=" * 70)
-        print("✗ Visualization generation failed")
+        print("Visualization generation failed")
         print("=" * 70)
         return 1
 

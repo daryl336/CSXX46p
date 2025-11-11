@@ -174,6 +174,12 @@ def compute_custom_rewards(self, old_state, action, new_state, events):
     if not hasattr(self, 'rewarded_bomb_survivals'):
         self.rewarded_bomb_survivals = set()
 
+    if not hasattr(self, 'opponent_bomb_tracker'):
+        self.opponent_bomb_tracker = {}
+
+    if not hasattr(self, 'opponent_bomb_danger_tracker'):
+        self.opponent_bomb_danger_tracker = {}
+
     try:
         old_x, old_y = old_state["self"][3]
         new_x, new_y = new_state["self"][3]
@@ -260,6 +266,72 @@ def compute_custom_rewards(self, old_state, action, new_state, events):
             if bomb_pos in self.own_bomb_max_dist:
                 del self.own_bomb_max_dist[bomb_pos]
 
+        # Track opponent bombs and reward escaping from them
+        current_bombs = set([(bx, by) for (bx, by), timer in new_state["bombs"]])
+        opponent_bombs = current_bombs - set(self.own_bomb_tracker.keys())
+
+        # Update opponent bomb tracker
+        for bomb_pos in opponent_bombs:
+            if bomb_pos not in self.opponent_bomb_tracker:
+                # New opponent bomb detected
+                self.opponent_bomb_tracker[bomb_pos] = new_state["step"]
+
+        # Check for escaping opponent bomb danger
+        opponent_bombs_to_remove = []
+        for bomb_pos in list(self.opponent_bomb_tracker.keys()):
+            if bomb_pos not in current_bombs:
+                # Bomb exploded
+                if bomb_pos in self.opponent_bomb_danger_tracker:
+                    # We were tracking danger from this bomb
+                    if self.opponent_bomb_danger_tracker[bomb_pos] and not is_in_danger(new_state, new_x, new_y):
+                        # We were in danger from this bomb and now we escaped (bomb exploded and we're safe)
+                        custom_reward += 0.05  # Reward for surviving opponent's bomb
+                        if hasattr(self, 'opponent_bomb_survival_count'):
+                            self.opponent_bomb_survival_count += 1
+                    del self.opponent_bomb_danger_tracker[bomb_pos]
+                opponent_bombs_to_remove.append(bomb_pos)
+            else:
+                # Bomb still exists, check if we're in danger from it
+                bx, by = bomb_pos
+                # Check if we're in the blast radius
+                in_danger_from_this_bomb = False
+
+                # Check horizontal line
+                if by == new_y and abs(bx - new_x) <= 3:
+                    blocked = False
+                    step = 1 if bx > new_x else -1
+                    for check_x in range(new_x, bx + step, step):
+                        if new_state["field"][check_x, new_y] == -1:
+                            blocked = True
+                            break
+                    if not blocked:
+                        in_danger_from_this_bomb = True
+
+                # Check vertical line
+                if bx == new_x and abs(by - new_y) <= 3:
+                    blocked = False
+                    step = 1 if by > new_y else -1
+                    for check_y in range(new_y, by + step, step):
+                        if new_state["field"][new_x, check_y] == -1:
+                            blocked = True
+                            break
+                    if not blocked:
+                        in_danger_from_this_bomb = True
+
+                # Track if we were in danger from this bomb
+                was_in_danger = self.opponent_bomb_danger_tracker.get(bomb_pos, False)
+                self.opponent_bomb_danger_tracker[bomb_pos] = in_danger_from_this_bomb
+
+                # Reward for escaping danger from this specific bomb (while it still exists)
+                if was_in_danger and not in_danger_from_this_bomb:
+                    custom_reward += 0.05  # Reward for moving out of danger zone
+                elif not was_in_danger and in_danger_from_this_bomb:
+                    custom_reward -= 0.1  # penalty for moving into danger zone
+
+        # Clean up opponent bomb trackers
+        for bomb_pos in opponent_bombs_to_remove:
+            del self.opponent_bomb_tracker[bomb_pos]
+
         return custom_reward
 
     except Exception as e:
@@ -302,8 +374,11 @@ def setup_training(self):
     restored_counters = getattr(self, 'restored_metrics_counters', {})
     self.metrics_tracker = None
     self.own_bomb_tracker = {}
+    self.opponent_bomb_tracker = {}
+    self.opponent_bomb_danger_tracker = {}
     self.bomb_usage_count = restored_counters.get('bomb_usage_count', 0)
     self.bomb_survival_count = restored_counters.get('bomb_survival_count', 0)
+    self.opponent_bomb_survival_count = restored_counters.get('opponent_bomb_survival_count', 0)
     self.bomb_death_count = restored_counters.get('bomb_death_count', 0)
     self.total_actions = restored_counters.get('total_actions', 0)
     self.current_round_score = 0
@@ -312,7 +387,7 @@ def setup_training(self):
     if restored_counters:
         self.logger.info(f"Restored metrics counters: actions={self.total_actions}, "
                         f"bombs={self.bomb_usage_count}, survived={self.bomb_survival_count}, "
-                        f"deaths={self.bomb_death_count}")
+                        f"opp_survived={self.opponent_bomb_survival_count}, deaths={self.bomb_death_count}")
 
     # Initialize coin distance tracking for reward shaping
     self.closest_coin_distance = {}
@@ -438,6 +513,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
         metrics_counters = {
             'bomb_usage_count': self.bomb_usage_count,
             'bomb_survival_count': self.bomb_survival_count,
+            'opponent_bomb_survival_count': self.opponent_bomb_survival_count,
             'bomb_death_count': self.bomb_death_count,
             'total_actions': self.total_actions,
         }
@@ -453,6 +529,10 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
 
     if hasattr(self, 'own_bomb_tracker'):
         self.own_bomb_tracker = {}
+    if hasattr(self, 'opponent_bomb_tracker'):
+        self.opponent_bomb_tracker = {}
+    if hasattr(self, 'opponent_bomb_danger_tracker'):
+        self.opponent_bomb_danger_tracker = {}
     if hasattr(self.train_agent, 'own_bomb_positions'):
         self.train_agent.own_bomb_positions = set()
     if hasattr(self, 'closest_coin_distance'):
@@ -468,6 +548,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
 
     bomb_usage_rate = self.bomb_usage_count / max(self.total_actions, 1)
     survival_rate = self.bomb_survival_count / max(self.bomb_usage_count, 1)
+    opponent_survival_rate = self.opponent_bomb_survival_count / max(self.round_counter, 1)  # Per round rate
     death_rate = self.bomb_death_count / max(self.bomb_usage_count, 1)
 
     actor_loss = self.train_agent.episode_metrics['actor_losses'][-1] if len(self.train_agent.episode_metrics['actor_losses']) > 0 else 0.0
@@ -481,6 +562,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
                 episode_return=self.current_round_return,
                 bomb_usage=bomb_usage_rate,
                 survival_rate=survival_rate,
+                opponent_survival_rate=opponent_survival_rate,
                 death_rate=death_rate,
                 entropy=self.train_agent.entropy_coef,
                 lr=self.train_agent.optimizer.param_groups[0]['lr'],
@@ -513,6 +595,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
                     metrics_counters_best = {
                         'bomb_usage_count': self.bomb_usage_count,
                         'bomb_survival_count': self.bomb_survival_count,
+                        'opponent_bomb_survival_count': self.opponent_bomb_survival_count,
                         'bomb_death_count': self.bomb_death_count,
                         'total_actions': self.total_actions,
                         'best_avg_score': self.best_avg_score,

@@ -102,9 +102,9 @@ class SimplifiedCNN_Network(nn.Module):
 class PPOAgent:
     def __init__(self, action_dim, lr=3e-4, gamma=0.99, gae_lambda=0.95, clip_eps=0.1,
                  update_epochs=10, entropy_coef_start=0.15, entropy_coef_end=0.01,
-                 entropy_decay=0.999, episodes_per_update=10, target_kl=0.04,
+                 entropy_decay=1, episodes_per_update=10, target_kl=0.04,
                  value_coef_start=0.8, value_coef_end=0.8, value_coef_decay=1,
-                 aux_loss_coef_start=1.0, aux_loss_coef_end=0.0, aux_loss_decay=0.999):
+                 aux_loss_coef_start=1.0, aux_loss_coef_end=0.0, aux_loss_decay=1):
 
         import logging
         self.logger = logging.getLogger(__name__)
