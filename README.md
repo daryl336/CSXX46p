@@ -1,3 +1,6 @@
+Project for CSXX46 AI Planning and Decision Making
+Team 29
+
 Setup environment:
 
 ```python
@@ -81,3 +84,6 @@ python -m main play --agents q_learning ppo dqn_final maverick
 
 python run_individual_evaluation.py --agents q_learning ppo dqn_final maverick --n-rounds 10
 python run_individual_evaluation.py --agents q_llm ppo_llm llm_maverick --n-rounds 1
+
+Demo Videos:
+Located in the demo folders
