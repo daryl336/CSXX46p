@@ -1,0 +1,56 @@
+{
+  "rankings": [
+    {
+      "rank": 1,
+      "agent": "maverick",
+      "episodes": 100,
+      "avg_reward": 144.56,
+      "total_reward": 14456.0,
+      "win_rate": 13.0,
+      "coins": 333,
+      "avg_coins": 3.33,
+      "kills": 4,
+      "deaths": 0,
+      "survival_rate": 100
+    },
+    {
+      "rank": 2,
+      "agent": "q_learning",
+      "episodes": 100,
+      "avg_reward": 11.34,
+      "total_reward": 1134.0,
+      "win_rate": 5.0,
+      "coins": 8,
+      "avg_coins": 0.08,
+      "kills": 0,
+      "deaths": 0,
+      "survival_rate": 100
+    },
+    {
+      "rank": 3,
+      "agent": "ppo",
+      "episodes": 100,
+      "avg_reward": -123.19,
+      "total_reward": -12319.0,
+      "win_rate": 0.0,
+      "coins": 18,
+      "avg_coins": 0.18,
+      "kills": 0,
+      "deaths": 0,
+      "survival_rate": 100
+    },
+    {
+      "rank": 4,
+      "agent": "dqn_final",
+      "episodes": 100,
+      "avg_reward": -144.67,
+      "total_reward": -14467.0,
+      "win_rate": 0.0,
+      "coins": 7,
+      "avg_coins": 0.07,
+      "kills": 0,
+      "deaths": 0,
+      "survival_rate": 100
+    }
+  ]
+}

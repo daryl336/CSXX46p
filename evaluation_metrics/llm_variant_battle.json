@@ -1,0 +1,53 @@
+{
+  "mode": "individual",
+  "description": "Coin collections",
+  "rounds_per_agent": 10,
+  "rankings": [
+    {
+      "rank": 1,
+      "agent": "llm_battle",
+      "episodes": 10,
+      "avg_reward": 78.3,
+      "total_reward": 783.0,
+      "win_rate": 20.0,
+      "coins": 9,
+      "avg_coins": 0.9,
+      "kills": 0,
+      "deaths": 8,
+      "deaths_by_opponent": 2,
+      "deaths_by_bomb": 6,
+      "avg_deaths": 0.8,
+      "survival_rate": 20.0,
+      "avg_survival_time": 168.6,
+      "total_bombs": 160,
+      "avg_bombs": 16.0,
+      "bomb_effectiveness": 0.0,
+      "total_crates": 348,
+      "avg_crates": 34.8,
+      "invalid_action_rate": 3.162291169451074
+    },
+    {
+      "rank": 2,
+      "agent": "llm_predict",
+      "episodes": 10,
+      "avg_reward": 19.8,
+      "total_reward": 198.0,
+      "win_rate": 10.0,
+      "coins": 16,
+      "avg_coins": 1.6,
+      "kills": 0,
+      "deaths": 9,
+      "deaths_by_opponent": 3,
+      "deaths_by_bomb": 6,
+      "avg_deaths": 0.9,
+      "survival_rate": 10.0,
+      "avg_survival_time": 184.2,
+      "total_bombs": 104,
+      "avg_bombs": 10.4,
+      "bomb_effectiveness": 0.0,
+      "total_crates": 245,
+      "avg_crates": 24.5,
+      "invalid_action_rate": 2.947598253275109
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "mode": "individual",
+  "description": "Coin collections",
+  "rounds_per_agent": 10,
+  "rankings": [
+    {
+      "rank": 1,
+      "agent": "REINFORCE",
+      "episodes": 10,
+      "avg_reward": -169.3,
+      "total_reward": -1693.0,
+      "win_rate": 0.0,
+      "coins": 0,
+      "avg_coins": 0.0,
+      "kills": 0,
+      "deaths": 10,
+      "deaths_by_opponent": 0,
+      "deaths_by_bomb": 10,
+      "avg_deaths": 1.0,
+      "survival_rate": 0.0,
+      "avg_survival_time": 12.4,
+      "total_bombs": 11,
+      "avg_bombs": 1.1,
+      "bomb_effectiveness": 0.0,
+      "total_crates": 24,
+      "avg_crates": 2.4,
+      "invalid_action_rate": 51.75438596491229
+    }
+  ]
+}

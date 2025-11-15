@@ -1,0 +1,30 @@
+{
+  "mode": "individual",
+  "description": "Coin collections",
+  "rounds_per_agent": 10,
+  "rankings": [
+    {
+      "rank": 1,
+      "agent": "ppo_th",
+      "episodes": 10,
+      "avg_reward": -130.5,
+      "total_reward": -1305.0,
+      "win_rate": 0.0,
+      "coins": 0,
+      "avg_coins": 0.0,
+      "kills": 0,
+      "deaths": 10,
+      "deaths_by_opponent": 0,
+      "deaths_by_bomb": 10,
+      "avg_deaths": 1.0,
+      "survival_rate": 0.0,
+      "avg_survival_time": 14.3,
+      "total_bombs": 16,
+      "avg_bombs": 1.6,
+      "bomb_effectiveness": 0.0,
+      "total_crates": 41,
+      "avg_crates": 4.1,
+      "invalid_action_rate": 0.0
+    }
+  ]
+}

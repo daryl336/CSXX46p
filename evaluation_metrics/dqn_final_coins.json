@@ -1,0 +1,30 @@
+{
+  "mode": "individual",
+  "description": "Coin collections",
+  "rounds_per_agent": 10,
+  "rankings": [
+    {
+      "rank": 1,
+      "agent": "dqn_final",
+      "episodes": 10,
+      "avg_reward": -148.1,
+      "total_reward": -1481.0,
+      "win_rate": 0.0,
+      "coins": 1,
+      "avg_coins": 0.1,
+      "kills": 0,
+      "deaths": 10,
+      "deaths_by_opponent": 0,
+      "deaths_by_bomb": 10,
+      "avg_deaths": 1.0,
+      "survival_rate": 0.0,
+      "avg_survival_time": 11.5,
+      "total_bombs": 21,
+      "avg_bombs": 2.1,
+      "bomb_effectiveness": 0.0,
+      "total_crates": 42,
+      "avg_crates": 4.2,
+      "invalid_action_rate": 24.404761904761905
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "mode": "individual",
+  "description": "Each agent vs 3 rule_based opponents",
+  "rounds_per_agent": 1,
+  "rankings": [
+    {
+      "rank": 1,
+      "agent": "llm",
+      "episodes": 1,
+      "avg_reward": 764.0,
+      "total_reward": 764.0,
+      "win_rate": 100.0,
+      "coins": 9,
+      "avg_coins": 9.0,
+      "kills": 0,
+      "deaths": 0,
+      "survival_rate": 100
+    }
+  ]
+}

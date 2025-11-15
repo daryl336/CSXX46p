@@ -1,0 +1,30 @@
+{
+  "mode": "individual",
+  "description": "Coin collections",
+  "rounds_per_agent": 10,
+  "rankings": [
+    {
+      "rank": 1,
+      "agent": "llm_maverick_v4",
+      "episodes": 10,
+      "avg_reward": -40.0,
+      "total_reward": -400.0,
+      "win_rate": 20.0,
+      "coins": 19,
+      "avg_coins": 1.9,
+      "kills": 1,
+      "deaths": 8,
+      "deaths_by_opponent": 3,
+      "deaths_by_bomb": 5,
+      "avg_deaths": 0.8,
+      "survival_rate": 20.0,
+      "avg_survival_time": 208.4,
+      "total_bombs": 247,
+      "avg_bombs": 24.7,
+      "bomb_effectiveness": 0.0,
+      "total_crates": 291,
+      "avg_crates": 29.1,
+      "invalid_action_rate": 14.251439539347407
+    }
+  ]
+}

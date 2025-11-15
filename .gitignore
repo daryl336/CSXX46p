@@ -14,5 +14,6 @@ data
 metrics
 plots
 .azure-openai-config.json
+*.pkl
 *.md
 game_score*
